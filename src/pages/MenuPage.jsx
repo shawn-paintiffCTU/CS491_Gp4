@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getMenu } from '../services/menuService'
 import { formatCurrency } from '../utils/formatCurrency'
+import { Link } from 'react-router-dom'
 
 function MenuPage() {
   const [categories, setCategories] = useState([])
@@ -50,7 +51,9 @@ function MenuPage() {
                 </p>
 
                 {item.isCustomizable && (
-                  <p className="customizable-label">Customizable</p>
+                  <Link to={`/menu/${item.id}/customize`}>
+                    Customize
+                  </Link>
                 )}
               </article>
             ))}
