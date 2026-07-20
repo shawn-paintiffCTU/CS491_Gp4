@@ -1,6 +1,8 @@
 import { Link, Outlet } from 'react-router-dom'
+import { useCart } from '../context/useCart'
 
 function Layout() {
+  const { itemCount } = useCart()
   return (
     <>
       <header>
@@ -9,7 +11,7 @@ function Layout() {
         <nav>
           <Link to="/">Home</Link>
           <Link to="/menu">Menu</Link>
-          <Link to="/cart">Cart</Link>
+          <Link to="/cart">Cart {itemCount > 0 && `(${itemCount})`} </Link>
           <Link to="/checkout">Checkout</Link>
         </nav>
       </header>
