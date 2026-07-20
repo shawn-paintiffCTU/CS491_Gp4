@@ -6,9 +6,13 @@ import {
 } from '../services/menuService'
 import { calculatePizzaPrice } from '../utils/calculatePizzaPrice'
 import { formatCurrency } from '../utils/formatCurrency'
+import { useCart } from '../context/useCart'
 
 function PizzaCustomizerPage() {
   const { itemId } = useParams()
+
+  const { addItem } = useCart()
+  const [confirmation, setConfirmation] = useState('')
 
   const [pizza, setPizza] = useState(null)
   const [sizes, setSizes] = useState([])
@@ -82,6 +86,19 @@ function PizzaCustomizerPage() {
         ? currentIds.filter((id) => id !== toppingId)
         : [...currentIds, toppingId],
     )
+  }
+
+  function handleAddToCart() {
+    addItem({
+      menuItemId: pizza.id,
+      name: pizza.name,
+      size: selectedSize,
+      crust: selectedCrust,
+      toppings: selectedToppings,
+      unitPriceCents: totalPriceCents,
+    })
+
+    setConfirmation(`${pizza.name} was added to your cart.`)
   }
 
   if (isLoading) {
@@ -176,7 +193,15 @@ function PizzaCustomizerPage() {
         <h3>Current price: {formatCurrency(totalPriceCents)}</h3>
       </section>
 
-      <button type="button">Add to cart</button>
+      <button type="button" onClick={handleAddToCart}>
+        Add to cart
+      </button>
+
+      {confirmation && (
+        <p role="status" aria-live="polite">
+          {confirmation}
+        </p>
+      )}
     </section>
   )
 }

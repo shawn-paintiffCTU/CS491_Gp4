@@ -208,4 +208,44 @@
   font-size: 0.875rem;
   font-weight: 600;
 }
+
+.cart-items {
+  display: grid;
+  gap: 1rem;
+}
+
+.cart-item {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  text-align: left;
+  border: 1px solid #555;
+  border-radius: 8px;
+}
+
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cart-summary {
+  max-width: 420px;
+  margin-top: 2rem;
+  margin-left: auto;
+  padding: 1rem;
+  border: 1px solid #555;
+  border-radius: 8px;
+}
+
+.cart-summary dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.cart-summary dd {
+  margin: 0;
+}
+
 }
