@@ -181,4 +181,31 @@
     right: 0;
     border-right-color: var(--border);
   }
+
+  .menu-category {
+  margin-top: 2rem;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.menu-card {
+  padding: 1rem;
+  text-align: left;
+  border: 1px solid #555;
+  border-radius: 8px;
+}
+
+.menu-card h4 {
+  margin-top: 0;
+}
+
+.customizable-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
 }
