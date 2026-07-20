@@ -1,0 +1,27 @@
+{
+  "name": "Plethora of Pizzas",
+  "tagline": "A pizza for every possibility.",
+  "description": "Plethora of Pizzas is a family-friendly restaurant serving customizable pizzas made with fresh ingredients.",
+  "phone": "(555) 555-4910",
+  "email": "hello@plethoraofpizzas.example",
+  "address": {
+    "street": "123 Main Street",
+    "city": "Auburn",
+    "state": "AL",
+    "zipCode": "36830"
+  },
+  "hours": [
+    {
+      "days": "Monday–Thursday",
+      "time": "11:00 AM–9:00 PM"
+    },
+    {
+      "days": "Friday–Saturday",
+      "time": "11:00 AM–10:00 PM"
+    },
+    {
+      "days": "Sunday",
+      "time": "12:00 PM–8:00 PM"
+    }
+  ]
+}
