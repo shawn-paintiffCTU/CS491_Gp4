@@ -1,0 +1,209 @@
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "Pizzas",
+      "description": "Handcrafted pizzas made to order.",
+      "displayOrder": 1,
+      "isActive": true
+    },
+    {
+      "id": 2,
+      "name": "Sides",
+      "description": "Perfect additions to your meal.",
+      "displayOrder": 2,
+      "isActive": true
+    },
+    {
+      "id": 3,
+      "name": "Drinks",
+      "description": "Cold beverages and refreshments.",
+      "displayOrder": 3,
+      "isActive": true
+    }
+  ],
+  "items": [
+    {
+      "id": 1,
+      "categoryId": 1,
+      "name": "Build Your Own Pizza",
+      "description": "Choose your preferred size, crust, and toppings.",
+      "basePriceCents": 999,
+      "isCustomizable": true,
+      "includedToppingIds": [],
+      "isActive": true
+    },
+    {
+      "id": 2,
+      "categoryId": 1,
+      "name": "Classic Pepperoni",
+      "description": "Mozzarella cheese and pepperoni over house-made sauce.",
+      "basePriceCents": 1299,
+      "isCustomizable": true,
+      "includedToppingIds": [1, 2],
+      "isActive": true
+    },
+    {
+      "id": 3,
+      "categoryId": 1,
+      "name": "Garden Supreme",
+      "description": "Mushrooms, onions, green peppers, olives, and tomatoes.",
+      "basePriceCents": 1399,
+      "isCustomizable": true,
+      "includedToppingIds": [3, 4, 5, 6, 7],
+      "isActive": true
+    },
+    {
+      "id": 4,
+      "categoryId": 2,
+      "name": "Garlic Breadsticks",
+      "description": "Oven-baked breadsticks brushed with garlic butter.",
+      "basePriceCents": 599,
+      "isCustomizable": false,
+      "includedToppingIds": [],
+      "isActive": true
+    },
+    {
+      "id": 5,
+      "categoryId": 2,
+      "name": "House Salad",
+      "description": "Fresh greens, tomatoes, onions, and your choice of dressing.",
+      "basePriceCents": 699,
+      "isCustomizable": false,
+      "includedToppingIds": [],
+      "isActive": true
+    },
+    {
+      "id": 6,
+      "categoryId": 3,
+      "name": "Fountain Drink",
+      "description": "Your choice of available fountain beverage.",
+      "basePriceCents": 249,
+      "isCustomizable": false,
+      "includedToppingIds": [],
+      "isActive": true
+    },
+    {
+      "id": 7,
+      "categoryId": 3,
+      "name": "Bottled Water",
+      "description": "Chilled bottled water.",
+      "basePriceCents": 199,
+      "isCustomizable": false,
+      "includedToppingIds": [],
+      "isActive": true
+    }
+  ],
+  "sizes": [
+    {
+      "id": 1,
+      "name": "Small",
+      "priceAdjustmentCents": 0,
+      "isActive": true
+    },
+    {
+      "id": 2,
+      "name": "Medium",
+      "priceAdjustmentCents": 300,
+      "isActive": true
+    },
+    {
+      "id": 3,
+      "name": "Large",
+      "priceAdjustmentCents": 600,
+      "isActive": true
+    }
+  ],
+  "crusts": [
+    {
+      "id": 1,
+      "name": "Hand Tossed",
+      "priceAdjustmentCents": 0,
+      "isActive": true
+    },
+    {
+      "id": 2,
+      "name": "Thin Crust",
+      "priceAdjustmentCents": 0,
+      "isActive": true
+    },
+    {
+      "id": 3,
+      "name": "Stuffed Crust",
+      "priceAdjustmentCents": 250,
+      "isActive": true
+    }
+  ],
+  "toppings": [
+    {
+      "id": 1,
+      "name": "Mozzarella",
+      "category": "Cheese",
+      "priceCents": 100,
+      "isActive": true
+    },
+    {
+      "id": 2,
+      "name": "Pepperoni",
+      "category": "Meat",
+      "priceCents": 150,
+      "isActive": true
+    },
+    {
+      "id": 3,
+      "name": "Mushrooms",
+      "category": "Vegetable",
+      "priceCents": 100,
+      "isActive": true
+    },
+    {
+      "id": 4,
+      "name": "Onions",
+      "category": "Vegetable",
+      "priceCents": 75,
+      "isActive": true
+    },
+    {
+      "id": 5,
+      "name": "Green Peppers",
+      "category": "Vegetable",
+      "priceCents": 100,
+      "isActive": true
+    },
+    {
+      "id": 6,
+      "name": "Black Olives",
+      "category": "Vegetable",
+      "priceCents": 100,
+      "isActive": true
+    },
+    {
+      "id": 7,
+      "name": "Tomatoes",
+      "category": "Vegetable",
+      "priceCents": 100,
+      "isActive": true
+    },
+    {
+      "id": 8,
+      "name": "Italian Sausage",
+      "category": "Meat",
+      "priceCents": 175,
+      "isActive": true
+    },
+    {
+      "id": 9,
+      "name": "Bacon",
+      "category": "Meat",
+      "priceCents": 175,
+      "isActive": true
+    },
+    {
+      "id": 10,
+      "name": "Extra Cheese",
+      "category": "Cheese",
+      "priceCents": 125,
+      "isActive": true
+    }
+  ]
+}
