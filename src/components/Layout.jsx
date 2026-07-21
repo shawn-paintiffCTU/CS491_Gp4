@@ -21,7 +21,7 @@ function Layout() {
       </main>
 
       <footer>
-        <p>© 2026 Plethora of Pizzas — School Project Demonstration</p>
+        <p>2026 Plethora of Pizzas: CTU CS491 Group4 Demonstration</p>
       </footer>
     </>
   )
