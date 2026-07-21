@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/useCart'
 import { formatCurrency } from '../utils/formatCurrency'
+import { useState } from 'react'
+import { validatePromotionCode } from '../services/promotionService'
 
 const TAX_RATE = 0.08
 
@@ -8,12 +10,40 @@ function CartPage() {
   const {
     items,
     subtotalCents,
+    appliedPromotion,
+    discountCents,
     updateQuantity,
     removeItem,
+    applyPromotion,
+    removePromotion,
   } = useCart()
 
-  const taxCents = Math.round(subtotalCents * TAX_RATE)
-  const totalCents = subtotalCents + taxCents
+  const discountedSubtotalCents = subtotalCents - discountCents
+  const taxCents = Math.round(discountedSubtotalCents * TAX_RATE)
+  const totalCents = discountedSubtotalCents + taxCents
+  const [promotionCode, setPromotionCode] = useState('')
+  const [promotionMessage, setPromotionMessage] = useState('')
+  const [promotionError, setPromotionError] = useState('')
+
+  async function handlePromotionSubmit(event) {
+    event.preventDefault()
+
+    const result = await validatePromotionCode(
+      promotionCode,
+      subtotalCents,
+    )
+
+    if (!result.isValid) {
+      setPromotionError(result.message)
+      setPromotionMessage('')
+      return
+    }
+
+    applyPromotion(result.promotion)
+    setPromotionError('')
+    setPromotionMessage(result.message)
+    setPromotionCode('')
+  }
 
   if (items.length === 0) {
     return (
@@ -43,8 +73,8 @@ function CartPage() {
                 <strong>Toppings:</strong>{' '}
                 {item.toppings.length > 0
                   ? item.toppings
-                      .map((topping) => topping.name)
-                      .join(', ')
+                    .map((topping) => topping.name)
+                    .join(', ')
                   : 'None'}
               </p>
 
@@ -104,6 +134,54 @@ function CartPage() {
         ))}
       </div>
 
+      <section className="promotion-section">
+        <h3>Promotion Code</h3>
+
+        {appliedPromotion ? (
+          <>
+            <p>
+              <strong>{appliedPromotion.code}</strong> —{' '}
+              {appliedPromotion.description}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                removePromotion()
+                setPromotionMessage('')
+              }}
+            >
+              Remove promotion
+            </button>
+          </>
+        ) : (
+          <form onSubmit={handlePromotionSubmit}>
+            <label htmlFor="promotion-code">Promotion code</label>
+
+            <input
+              id="promotion-code"
+              type="text"
+              value={promotionCode}
+              maxLength="30"
+              autoComplete="off"
+              onChange={(event) =>
+                setPromotionCode(event.target.value.toUpperCase())
+              }
+            />
+
+            <button type="submit">Apply</button>
+          </form>
+        )}
+
+        {promotionMessage && (
+          <p role="status">{promotionMessage}</p>
+        )}
+
+        {promotionError && (
+          <p role="alert">{promotionError}</p>
+        )}
+      </section>
+
       <section className="cart-summary">
         <h3>Order Summary</h3>
 
@@ -112,6 +190,13 @@ function CartPage() {
             <dt>Subtotal</dt>
             <dd>{formatCurrency(subtotalCents)}</dd>
           </div>
+
+          {discountCents > 0 && (
+            <div>
+              <dt>Promotion discount</dt>
+              <dd>−{formatCurrency(discountCents)}</dd>
+            </div>
+          )}
 
           <div>
             <dt>Estimated tax</dt>

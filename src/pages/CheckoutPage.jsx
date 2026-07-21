@@ -18,6 +18,8 @@ function CheckoutPage() {
     items,
     itemCount,
     subtotalCents,
+    appliedPromotion,
+    discountCents,
     clearCart,
   } = useCart()
 
@@ -29,8 +31,9 @@ function CheckoutPage() {
   const zipCodeTooltip = getDeliveryZipCodeDescription()
   const [completedOrder, setCompletedOrder] = useState(null)
 
-  const taxCents = Math.round(subtotalCents * TAX_RATE)
-  const totalCents = subtotalCents + taxCents
+  const discountedSubtotalCents = subtotalCents - discountCents
+  const taxCents = Math.round(discountedSubtotalCents * TAX_RATE)
+  const totalCents = discountedSubtotalCents + taxCents
 
   function updateAddress(event) {
     const { name, value } = event.target
@@ -270,6 +273,16 @@ function CheckoutPage() {
           <h3>Order Summary</h3>
           <p>Items: {itemCount}</p>
           <p>Subtotal: {formatCurrency(subtotalCents)}</p>
+          {appliedPromotion && discountCents > 0 && (
+            <>
+              <p>
+                Promotion: {appliedPromotion.code}
+              </p>
+              <p>
+                Discount: −{formatCurrency(discountCents)}
+              </p>
+            </>
+          )}
           <p>Estimated tax: {formatCurrency(taxCents)}</p>
           <p>
             <strong>Total: {formatCurrency(totalCents)}</strong>
