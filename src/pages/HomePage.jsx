@@ -3,6 +3,7 @@ import { getRestaurantInformation } from '../services/restaurantService'
 import { Link } from 'react-router-dom'
 import { getActivePromotions } from '../services/promotionService'
 import { formatCurrency } from '../utils/formatCurrency'
+import PhotoGallery from '../components/PhotoGallery'
 
 function HomePage() {
   const [restaurant, setRestaurant] = useState(null)
@@ -65,6 +66,8 @@ function HomePage() {
           <Link to="/menu">Start an order</Link>
         </section>
       )}
+
+      <PhotoGallery />
 
       <section>
         <h2>Visit Us</h2>

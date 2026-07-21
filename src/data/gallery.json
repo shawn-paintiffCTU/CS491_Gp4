@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "src": "/images/gallery/featured-pizza.webp",
+    "alt": "Freshly baked pizza served on a restaurant table",
+    "caption": "Freshly baked favorites"
+  },
+  {
+    "id": 2,
+    "src": "/images/gallery/custom-pizza.webp",
+    "alt": "Customized pizza covered with assorted toppings",
+    "caption": "Made exactly how you want it"
+  },
+  {
+    "id": 3,
+    "src": "/images/gallery/dining-room.webp",
+    "alt": "Welcoming family-friendly restaurant dining room",
+    "caption": "A comfortable place to gather"
+  },
+  {
+    "id": 4,
+    "src": "/images/gallery/outdoor-dining.webp",
+    "alt": "Family enjoying pizza together at a restaurant table",
+    "caption": "Something for the whole family"
+  },
+  {
+    "id": 5,
+    "src": "/images/gallery/pizza-in-oven.webp",
+    "alt": "Pizza being prepared with fresh ingredients",
+    "caption": "Prepared fresh"
+  },
+  {
+    "id": 6,
+    "src": "/images/gallery/breadsticks-and-salad.webp",
+    "alt": "Breadsticks and salad served alongside pizza",
+    "caption": "More than just pizza"
+  }
+]
