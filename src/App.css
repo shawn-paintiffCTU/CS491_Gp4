@@ -256,4 +256,18 @@
     font-size: 0.9em;
   }
 
+  .promotion-section {
+    margin-top: 2rem;
+    padding: 1rem;
+    border: 1px solid #555;
+    border-radius: 8px;
+  }
+
+  .promotion-section form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.75rem;
+  }
+
 }
