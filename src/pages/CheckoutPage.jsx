@@ -243,18 +243,18 @@ function CheckoutPage() {
             />
             {errors.state && <p role="alert">{errors.state}</p>}
 
-            <label htmlFor="zip-code">
-              ZIP code{' '}
-              <span
-                className="field-tooltip"
-                role="img"
-                tabIndex="0"
-                aria-label={zipCodeTooltip}
-                title={zipCodeTooltip}
-              >
-                ⓘ
-              </span>
-            </label>
+            <div className="field-label-row">
+              <label htmlFor="zip-code">ZIP code</label>
+
+              <details className="field-help">
+                <summary aria-label="Show accepted ZIP codes">
+                  ⓘ
+                </summary>
+
+                <span role="tooltip">{zipCodeTooltip}</span>
+              </details>
+            </div>
+
             <input
               id="zip-code"
               name="zipCode"

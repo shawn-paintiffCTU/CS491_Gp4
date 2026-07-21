@@ -1,6 +1,17 @@
 import promotions from '../data/promotions.json'
 import { formatCurrency } from '../utils/formatCurrency'
 
+export async function getActivePromotions() {
+  return promotions
+    .filter((promotion) => promotion.isActive)
+    .map((promotion) => ({
+      id: promotion.id,
+      code: promotion.code,
+      description: promotion.description,
+      minimumSubtotalCents: promotion.minimumSubtotalCents,
+    }))
+}
+
 export async function validatePromotionCode(code, subtotalCents) {
   const normalizedCode = code.trim().toUpperCase()
 
