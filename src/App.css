@@ -251,9 +251,39 @@
     margin: 0;
   }
 
-  .field-tooltip {
-    cursor: help;
+  .field-label-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .field-help {
+    position: relative;
+  }
+
+  .field-help summary {
+    cursor: pointer;
+    list-style: none;
     font-size: 0.9em;
+  }
+
+  .field-help summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .field-help[open] span {
+    position: absolute;
+    z-index: 10;
+    top: 1.75rem;
+    left: 0;
+    width: max-content;
+    max-width: min(280px, 80vw);
+    padding: 0.65rem;
+    color: #fff;
+    background: #222;
+    border: 1px solid #777;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 30%);
   }
 
   .promotion-section {
@@ -268,6 +298,28 @@
     flex-wrap: wrap;
     align-items: end;
     gap: 0.75rem;
+  }
+
+  .specials-section {
+    margin-block: 2rem;
+  }
+
+  .specials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-block: 1rem;
+  }
+
+  .special-card {
+    padding: 1rem;
+    text-align: left;
+    border: 1px solid #555;
+    border-radius: 8px;
+  }
+
+  .special-card h3 {
+    margin-top: 0;
   }
 
 }

@@ -1,15 +1,24 @@
 import { useEffect, useState } from 'react'
 import { getRestaurantInformation } from '../services/restaurantService'
+import { Link } from 'react-router-dom'
+import { getActivePromotions } from '../services/promotionService'
+import { formatCurrency } from '../utils/formatCurrency'
 
 function HomePage() {
   const [restaurant, setRestaurant] = useState(null)
   const [error, setError] = useState('')
+  const [promotions, setPromotions] = useState([])
 
   useEffect(() => {
     async function loadRestaurant() {
       try {
-        const information = await getRestaurantInformation()
+        const [information, activePromotions] = await Promise.all([
+          getRestaurantInformation(),
+          getActivePromotions(),
+        ])
+
         setRestaurant(information)
+        setPromotions(activePromotions)
       } catch {
         setError('Restaurant information could not be loaded.')
       }
@@ -34,6 +43,28 @@ function HomePage() {
         <p>{restaurant.tagline}</p>
         <p>{restaurant.description}</p>
       </section>
+
+      {promotions.length > 0 && (
+        <section className="specials-section">
+          <h2>Current Specials</h2>
+          <p>Use these promotion codes when reviewing your cart.</p>
+
+          <div className="specials-grid">
+            {promotions.map((promotion) => (
+              <article key={promotion.id} className="special-card">
+                <h3>{promotion.code}</h3>
+                <p>{promotion.description}</p>
+                <p>
+                  Minimum order:{' '}
+                  {formatCurrency(promotion.minimumSubtotalCents)}
+                </p>
+              </article>
+            ))}
+          </div>
+
+          <Link to="/menu">Start an order</Link>
+        </section>
+      )}
 
       <section>
         <h2>Visit Us</h2>
