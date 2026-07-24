@@ -10,7 +10,7 @@ function PhotoGallery() {
                 {galleryImages.map((image) => (
                     <figure key={image.id} className="gallery-item">
                         <img
-                            src={image.src}
+                            src={`${import.meta.env.BASE_URL}${image.src.replace(/^\//, '')}`}
                             alt={image.alt}
                             width="1200"
                             height="800"
