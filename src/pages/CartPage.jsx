@@ -65,18 +65,22 @@ function CartPage() {
             <div>
               <h3>{item.name}</h3>
 
-              <p>
-                {item.size.name} · {item.crust.name}
-              </p>
+              {item.isCustomizable && (
+                <>
+                  <p>
+                    {item.size.name} · {item.crust.name}
+                  </p>
 
-              <p>
-                <strong>Toppings:</strong>{' '}
-                {item.toppings.length > 0
-                  ? item.toppings
-                    .map((topping) => topping.name)
-                    .join(', ')
-                  : 'None'}
-              </p>
+                  <p>
+                    <strong>Toppings:</strong>{' '}
+                    {item.toppings.length > 0
+                      ? item.toppings
+                        .map((topping) => topping.name)
+                        .join(', ')
+                      : 'None'}
+                  </p>
+                </>
+              )}
 
               <p>
                 {formatCurrency(item.unitPriceCents)} each

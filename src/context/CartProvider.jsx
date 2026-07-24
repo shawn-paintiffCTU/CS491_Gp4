@@ -3,15 +3,18 @@ import { CartContext } from './CartContext'
 import { calculatePromotionDiscount } from '../services/promotionService'
 
 function createCartItemId(item) {
-  const toppingIds = item.toppings
+  const sizeId = item.size?.id ?? 'standard'
+  const crustId = item.crust?.id ?? 'standard'
+
+  const toppingIds = (item.toppings ?? [])
     .map((topping) => topping.id)
     .sort((first, second) => first - second)
     .join('-')
 
   return [
     item.menuItemId,
-    item.size.id,
-    item.crust.id,
+    sizeId,
+    crustId,
     toppingIds,
   ].join(':')
 }
@@ -21,6 +24,10 @@ export function CartProvider({ children }) {
   const [appliedPromotion, setAppliedPromotion] = useState(null)
 
   function addItem(item) {
+    const quantityToAdd =
+      Number.isInteger(item.quantity) && item.quantity > 0
+        ? item.quantity
+        : 1
     const cartItemId = createCartItemId(item)
 
     setItems((currentItems) => {
@@ -33,7 +40,7 @@ export function CartProvider({ children }) {
           currentItem.cartItemId === cartItemId
             ? {
               ...currentItem,
-              quantity: currentItem.quantity + 1,
+              quantity: currentItem.quantity + quantityToAdd,
             }
             : currentItem,
         )
@@ -44,7 +51,7 @@ export function CartProvider({ children }) {
         {
           ...item,
           cartItemId,
-          quantity: 1,
+          quantity: quantityToAdd,
         },
       ]
     })
