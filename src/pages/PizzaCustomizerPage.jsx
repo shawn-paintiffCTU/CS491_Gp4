@@ -7,12 +7,15 @@ import {
 import { calculatePizzaPrice } from '../utils/calculatePizzaPrice'
 import { formatCurrency } from '../utils/formatCurrency'
 import { useCart } from '../context/useCart'
+import FloatingNotification from '../components/FloatingNotification'
+import { useFloatingNotification } from '../hooks/useFloatingNotification'
 
 function PizzaCustomizerPage() {
   const { itemId } = useParams()
 
   const { addItem } = useCart()
-  const [confirmation, setConfirmation] = useState('')
+  const { notification, showNotification } =
+    useFloatingNotification()
 
   const [pizza, setPizza] = useState(null)
   const [sizes, setSizes] = useState([])
@@ -23,6 +26,7 @@ function PizzaCustomizerPage() {
   const [selectedToppingIds, setSelectedToppingIds] = useState([])
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [quantity, setQuantity] = useState(1)
 
   useEffect(() => {
     async function loadCustomizer() {
@@ -88,7 +92,7 @@ function PizzaCustomizerPage() {
     )
   }
 
-  function handleAddToCart() {
+  function handleAddToCart(event) {
     addItem({
       menuItemId: pizza.id,
       name: pizza.name,
@@ -96,9 +100,11 @@ function PizzaCustomizerPage() {
       crust: selectedCrust,
       toppings: selectedToppings,
       unitPriceCents: totalPriceCents,
+      quantity,
+      isCustomizable: true,
     })
 
-    setConfirmation(`${pizza.name} was added to your cart.`)
+    showNotification(`${pizza.name} added to cart.`, event)
   }
 
   if (isLoading) {
@@ -116,6 +122,8 @@ function PizzaCustomizerPage() {
 
   return (
     <section>
+      <FloatingNotification notification={notification} />
+
       <Link to="/menu">← Back to menu</Link>
 
       <h2>Customize {pizza.name}</h2>
@@ -189,19 +197,52 @@ function PizzaCustomizerPage() {
         })}
       </fieldset>
 
+      <fieldset>
+        <legend>Quantity</legend>
+
+        <label htmlFor="pizza-quantity">
+          Number of pizzas
+        </label>
+
+        <select
+          id="pizza-quantity"
+          value={quantity}
+          onChange={(event) =>
+            setQuantity(Number(event.target.value))
+          }
+        >
+          {Array.from({ length: 10 }, (_, index) => {
+            const optionQuantity = index + 1
+
+            return (
+              <option
+                key={optionQuantity}
+                value={optionQuantity}
+              >
+                {optionQuantity}
+              </option>
+            )
+          })}
+        </select>
+      </fieldset>
+
       <section aria-live="polite">
-        <h3>Current price: {formatCurrency(totalPriceCents)}</h3>
+        <h3>Customization Summary</h3>
+        <p>
+          Price per pizza: {formatCurrency(totalPriceCents)}
+        </p>
+        <p>Quantity: {quantity}</p>
+        <p>
+          <strong>
+            Item total:{' '}
+            {formatCurrency(totalPriceCents * quantity)}
+          </strong>
+        </p>
       </section>
 
       <button type="button" onClick={handleAddToCart}>
         Add to cart
       </button>
-
-      {confirmation && (
-        <p role="status" aria-live="polite">
-          {confirmation}
-        </p>
-      )}
     </section>
   )
 }

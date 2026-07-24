@@ -2,11 +2,17 @@ import { useEffect, useState } from 'react'
 import { getMenu } from '../services/menuService'
 import { formatCurrency } from '../utils/formatCurrency'
 import { Link } from 'react-router-dom'
+import { useCart } from '../context/useCart'
+import FloatingNotification from '../components/FloatingNotification'
+import { useFloatingNotification } from '../hooks/useFloatingNotification'
 
 function MenuPage() {
   const [categories, setCategories] = useState([])
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const { addItem } = useCart()
+  const { notification, showNotification } =
+    useFloatingNotification()
 
   useEffect(() => {
     async function loadMenu() {
@@ -23,6 +29,21 @@ function MenuPage() {
     loadMenu()
   }, [])
 
+  function handleAddStandardItem(item, event) {
+    addItem({
+      menuItemId: item.id,
+      name: item.name,
+      size: null,
+      crust: null,
+      toppings: [],
+      unitPriceCents: item.basePriceCents,
+      quantity: 1,
+      isCustomizable: false,
+    })
+
+    showNotification(`${item.name} added to cart.`, event)
+  }
+
   if (isLoading) {
     return <p>Loading menu...</p>
   }
@@ -33,6 +54,8 @@ function MenuPage() {
 
   return (
     <section>
+
+      <FloatingNotification notification={notification} />
       <h2>Our Menu</h2>
       <p>Browse our pizzas, sides, and drinks.</p>
 
@@ -50,10 +73,19 @@ function MenuPage() {
                   <strong>{formatCurrency(item.basePriceCents)}</strong>
                 </p>
 
-                {item.isCustomizable && (
+                {item.isCustomizable ? (
                   <Link to={`/menu/${item.id}/customize`}>
                     Customize
                   </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(event) =>
+                      handleAddStandardItem(item, event)
+                    }
+                  >
+                    Add to cart
+                  </button>
                 )}
               </article>
             ))}
