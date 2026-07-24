@@ -1,17 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/useCart'
-import { getDeliveryZipCodeDescription, validateDeliveryAddress } from '../services/deliveryService'
 import { formatCurrency } from '../utils/formatCurrency'
 
 const TAX_RATE = 0.08
-
-const emptyAddress = {
-  street: '',
-  city: '',
-  state: 'AL',
-  zipCode: '',
-}
 
 function CheckoutPage() {
   const {
@@ -23,26 +15,14 @@ function CheckoutPage() {
     clearCart,
   } = useCart()
 
-  const [fulfillment, setFulfillment] = useState('pickup')
   const [customerName, setCustomerName] = useState('')
   const [phone, setPhone] = useState('')
-  const [address, setAddress] = useState(emptyAddress)
   const [errors, setErrors] = useState({})
-  const zipCodeTooltip = getDeliveryZipCodeDescription()
   const [completedOrder, setCompletedOrder] = useState(null)
 
   const discountedSubtotalCents = subtotalCents - discountCents
   const taxCents = Math.round(discountedSubtotalCents * TAX_RATE)
   const totalCents = discountedSubtotalCents + taxCents
-
-  function updateAddress(event) {
-    const { name, value } = event.target
-
-    setAddress((currentAddress) => ({
-      ...currentAddress,
-      [name]: value,
-    }))
-  }
 
   function validateForm() {
     const validationErrors = {}
@@ -53,12 +33,6 @@ function CheckoutPage() {
 
     if (!/^[0-9()+\-\s]{7,20}$/.test(phone.trim())) {
       validationErrors.phone = 'Enter a valid phone number.'
-    }
-
-    if (fulfillment === 'delivery') {
-      const deliveryValidation = validateDeliveryAddress(address)
-
-      Object.assign(validationErrors, deliveryValidation.errors)
     }
 
     setErrors(validationErrors)
@@ -76,7 +50,6 @@ function CheckoutPage() {
     setCompletedOrder({
       itemCount,
       totalCents,
-      fulfillment,
     })
 
     clearCart()
@@ -101,10 +74,7 @@ function CheckoutPage() {
         </p>
 
         <p>
-          Fulfillment method:{' '}
-          {completedOrder.fulfillment === 'delivery'
-            ? 'Delivery'
-            : 'Pickup'}
+          <strong>Fulfillment method:</strong> Pickup
         </p>
 
         <p>
@@ -137,31 +107,13 @@ function CheckoutPage() {
       </p>
 
       <form onSubmit={handleSubmit} noValidate>
-        <fieldset>
-          <legend>Fulfillment method</legend>
 
-          <label>
-            <input
-              type="radio"
-              name="fulfillment"
-              value="pickup"
-              checked={fulfillment === 'pickup'}
-              onChange={() => setFulfillment('pickup')}
-            />
-            Pickup
-          </label>
-
-          <label>
-            <input
-              type="radio"
-              name="fulfillment"
-              value="delivery"
-              checked={fulfillment === 'delivery'}
-              onChange={() => setFulfillment('delivery')}
-            />
-            Delivery
-          </label>
-        </fieldset>
+        <section className="pickup-notice">
+          <h3>Pickup Order</h3>
+          <p>
+            All online orders must be picked up at the restaurant.
+          </p>
+        </section>
 
         <fieldset>
           <legend>Contact information</legend>
@@ -202,72 +154,6 @@ function CheckoutPage() {
             </p>
           )}
         </fieldset>
-
-        {fulfillment === 'delivery' && (
-          <fieldset>
-            <legend>Delivery address</legend>
-
-            <label htmlFor="street">Street address</label>
-            <input
-              id="street"
-              name="street"
-              type="text"
-              value={address.street}
-              maxLength="150"
-              aria-invalid={Boolean(errors.street)}
-              onChange={updateAddress}
-            />
-            {errors.street && <p role="alert">{errors.street}</p>}
-
-            <label htmlFor="city">City</label>
-            <input
-              id="city"
-              name="city"
-              type="text"
-              value={address.city}
-              maxLength="100"
-              aria-invalid={Boolean(errors.city)}
-              onChange={updateAddress}
-            />
-            {errors.city && <p role="alert">{errors.city}</p>}
-
-            <label htmlFor="state">State</label>
-            <input
-              id="state"
-              name="state"
-              type="text"
-              value={address.state}
-              maxLength="2"
-              aria-invalid={Boolean(errors.state)}
-              onChange={updateAddress}
-            />
-            {errors.state && <p role="alert">{errors.state}</p>}
-
-            <div className="field-label-row">
-              <label htmlFor="zip-code">ZIP code</label>
-
-              <details className="field-help">
-                <summary aria-label="Show accepted ZIP codes">
-                  ⓘ
-                </summary>
-
-                <span role="tooltip">{zipCodeTooltip}</span>
-              </details>
-            </div>
-
-            <input
-              id="zip-code"
-              name="zipCode"
-              type="text"
-              inputMode="numeric"
-              value={address.zipCode}
-              maxLength="5"
-              aria-invalid={Boolean(errors.zipCode)}
-              onChange={updateAddress}
-            />
-            {errors.zipCode && <p role="alert">{errors.zipCode}</p>}
-          </fieldset>
-        )}
 
         <section>
           <h3>Order Summary</h3>

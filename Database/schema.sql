@@ -1,4 +1,4 @@
--- Plethora of Pizzas
+-- Plethora of PIES!
 -- PostgreSQL database schema
 
 CREATE TABLE categories (
