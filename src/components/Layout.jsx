@@ -6,7 +6,7 @@ function Layout() {
   return (
     <>
       <header>
-        <h1>Plethora of Pizzas</h1>
+        <h1>Plethora of PIES!</h1>
 
         <nav>
           <Link to="/">Home</Link>
@@ -21,7 +21,7 @@ function Layout() {
       </main>
 
       <footer>
-        <p>2026 Plethora of Pizzas: CTU CS491 Group4 Demonstration</p>
+        <p>2026 Plethora of PIES!: CTU CS491 Group4 Demonstration</p>
       </footer>
     </>
   )
