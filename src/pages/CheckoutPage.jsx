@@ -1,7 +1,7 @@
 // Pickup-only demonstration checkout with contact validation and confirmation.
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useCart } from '../context/cartContext'
+import { useCart } from '../context/CartContext'
 import {
   calculateOrderTotals,
   formatCurrency,

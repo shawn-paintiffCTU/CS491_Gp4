@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { getMenu } from '../services/menuService.js'
 import { formatCurrency } from '../utils/pricing'
 import { Link } from 'react-router-dom'
-import { useCart } from '../context/cartContext'
+import { useCart } from '../context/CartContext'
 import FloatingNotification from '../components/FloatingNotification'
 import { useFloatingNotification } from '../hooks/useFloatingNotification'
 

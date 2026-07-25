@@ -9,7 +9,7 @@ import {
   calculatePizzaPrice,
   formatCurrency,
 } from '../utils/pricing'
-import { useCart } from '../context/cartContext'
+import { useCart } from '../context/CartContext'
 import FloatingNotification from '../components/FloatingNotification'
 import { useFloatingNotification } from '../hooks/useFloatingNotification'
 

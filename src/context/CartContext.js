@@ -1,4 +1,4 @@
-// The context and access hook belong together because they define one API.
+// Defines the shared cart context and the hook used to access it.
 import { createContext, useContext } from 'react'
 
 export const CartContext = createContext(null)

@@ -1,6 +1,6 @@
 // Shared frame shown around every page: header, navigation, content, and footer.
 import { Link, Outlet } from 'react-router-dom'
-import { useCart } from '../context/cartContext'
+import { useCart } from '../context/CartContext'
 
 function Layout() {
   const { itemCount } = useCart()

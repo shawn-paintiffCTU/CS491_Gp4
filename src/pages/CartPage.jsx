@@ -1,6 +1,6 @@
 // Cart page: edits quantities, applies promotions, and summarizes the order.
 import { Link } from 'react-router-dom'
-import { useCart } from '../context/cartContext'
+import { useCart } from '../context/CartContext'
 import {
   calculateOrderTotals,
   formatCurrency,

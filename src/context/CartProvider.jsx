@@ -1,6 +1,6 @@
 // Owns cart and promotion state and exposes cart actions to every page.
 import { useMemo, useState } from 'react'
-import { CartContext } from './cartContext'
+import { CartContext } from './CartContext.js'
 import { calculatePromotionDiscount } from '../services/promotionService.js'
 
 function createCartItemId(item) {
