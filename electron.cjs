@@ -1,7 +1,9 @@
+// Electron entry point: opens the production Vite build as a desktop app.
 const { app, BrowserWindow } = require('electron')
 const path = require('node:path')
 
 function createWindow() {
+  // These settings isolate the webpage from Node.js and operating-system APIs.
   const window = new BrowserWindow({
     width: 1280,
     height: 800,

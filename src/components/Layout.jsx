@@ -1,5 +1,6 @@
+// Shared frame shown around every page: header, navigation, content, and footer.
 import { Link, Outlet } from 'react-router-dom'
-import { useCart } from '../context/useCart'
+import { useCart } from '../context/CartContext'
 
 function Layout() {
   const { itemCount } = useCart()
@@ -8,10 +9,12 @@ function Layout() {
       <header>
         <h1>Plethora of PIES!</h1>
 
-        <nav>
+        <nav aria-label="Primary navigation">
           <Link to="/">Home</Link>
           <Link to="/menu">Menu</Link>
-          <Link to="/cart">Cart {itemCount > 0 && `(${itemCount})`} </Link>
+          <Link to="/cart">
+            Cart{itemCount > 0 ? ` (${itemCount})` : ''}
+          </Link>
           <Link to="/checkout">Checkout</Link>
         </nav>
       </header>
