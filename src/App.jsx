@@ -1,3 +1,4 @@
+// Defines the application's pages and the URL assigned to each page.
 import {
   BrowserRouter, HashRouter, Route, Routes,
 } from 'react-router-dom'
@@ -9,6 +10,7 @@ import CheckoutPage from './pages/CheckoutPage'
 import './App.css'
 import PizzaCustomizerPage from './pages/PizzaCustomizerPage'
 
+// Electron opens a file URL, which needs hashes; the hosted site uses normal URLs.
 const Router =
   window.location.protocol === 'file:'
     ? HashRouter

@@ -1,8 +1,9 @@
+// Menu page: groups active products and sends selected items to the cart.
 import { useEffect, useState } from 'react'
-import { getMenu } from '../services/menuService'
-import { formatCurrency } from '../utils/formatCurrency'
+import { getMenu } from '../services/menuService.js'
+import { formatCurrency } from '../utils/pricing'
 import { Link } from 'react-router-dom'
-import { useCart } from '../context/useCart'
+import { useCart } from '../context/cartContext'
 import FloatingNotification from '../components/FloatingNotification'
 import { useFloatingNotification } from '../hooks/useFloatingNotification'
 
@@ -33,9 +34,6 @@ function MenuPage() {
     addItem({
       menuItemId: item.id,
       name: item.name,
-      size: null,
-      crust: null,
-      toppings: [],
       unitPriceCents: item.basePriceCents,
       quantity: 1,
       isCustomizable: false,
@@ -54,7 +52,6 @@ function MenuPage() {
 
   return (
     <section>
-
       <FloatingNotification notification={notification} />
       <h2>Our Menu</h2>
       <p>Browse our pizzas, sides, and drinks.</p>

@@ -1,3 +1,4 @@
+// Vite builds the React source for both web hosting and Electron.
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 

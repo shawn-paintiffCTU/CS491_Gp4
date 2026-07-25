@@ -1,6 +1,7 @@
 -- Plethora of PIES!
--- PostgreSQL database schema
+-- Proposed PostgreSQL database schema. It is not connected to the current app.
 
+-- Top-level groups such as Pizzas, Sides, and Drinks.
 CREATE TABLE categories (
     category_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
@@ -9,6 +10,7 @@ CREATE TABLE categories (
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+-- Products customers see on the menu.
 CREATE TABLE menu_items (
     menu_item_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     category_id INTEGER NOT NULL,
@@ -25,6 +27,7 @@ CREATE TABLE menu_items (
         ON DELETE RESTRICT
 );
 
+-- Price adjustments available in the pizza customizer.
 CREATE TABLE pizza_sizes (
     size_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
@@ -40,6 +43,7 @@ CREATE TABLE crusts (
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+-- Individual ingredients customers can add to a pizza.
 CREATE TABLE toppings (
     topping_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
@@ -48,6 +52,7 @@ CREATE TABLE toppings (
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+-- Many-to-many link between menu pizzas and their included toppings.
 CREATE TABLE menu_item_toppings (
     menu_item_id INTEGER NOT NULL,
     topping_id INTEGER NOT NULL,
@@ -66,6 +71,7 @@ CREATE TABLE menu_item_toppings (
         ON DELETE RESTRICT
 );
 
+-- Indexes make common category and active-item lookups faster.
 CREATE INDEX idx_menu_items_category
     ON menu_items(category_id);
 
