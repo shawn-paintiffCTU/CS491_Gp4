@@ -8,6 +8,8 @@ import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import './App.css'
 import PizzaCustomizerPage from './pages/PizzaCustomizerPage'
+import RegisterPage from "./pages/RegisterPage";
+import LoginPage from "./pages/LoginPage";
 
 const Router =
   window.location.protocol === 'file:'
@@ -21,13 +23,19 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/menu" element={<MenuPage />} />
-          <Route path="/menu/:itemId/customize" element={<PizzaCustomizerPage />} />
+
+          <Route
+            path="/menu/:itemId/customize"
+            element={<PizzaCustomizerPage />}
+          />
+
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login" element={<LoginPage />} />
         </Route>
       </Routes>
     </Router>
-  )
+  );
 }
-
 export default App
