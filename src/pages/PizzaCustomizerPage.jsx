@@ -1,12 +1,15 @@
+// Pizza builder: selects options, calculates a live price, and adds the result.
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   getMenuItem,
   getPizzaOptions,
-} from '../services/menuService'
-import { calculatePizzaPrice } from '../utils/calculatePizzaPrice'
-import { formatCurrency } from '../utils/formatCurrency'
-import { useCart } from '../context/useCart'
+} from '../services/menuService.js'
+import {
+  calculatePizzaPrice,
+  formatCurrency,
+} from '../utils/pricing'
+import { useCart } from '../context/CartContext'
 import FloatingNotification from '../components/FloatingNotification'
 import { useFloatingNotification } from '../hooks/useFloatingNotification'
 
@@ -58,16 +61,22 @@ function PizzaCustomizerPage() {
     loadCustomizer()
   }, [itemId])
 
-  const selectedSize = sizes.find(
-    (size) => size.id === selectedSizeId,
+  const selectedSize = useMemo(
+    () => sizes.find((size) => size.id === selectedSizeId),
+    [sizes, selectedSizeId],
   )
 
-  const selectedCrust = crusts.find(
-    (crust) => crust.id === selectedCrustId,
+  const selectedCrust = useMemo(
+    () => crusts.find((crust) => crust.id === selectedCrustId),
+    [crusts, selectedCrustId],
   )
 
-  const selectedToppings = toppings.filter((topping) =>
-    selectedToppingIds.includes(topping.id),
+  const selectedToppings = useMemo(
+    () =>
+      toppings.filter((topping) =>
+        selectedToppingIds.includes(topping.id),
+      ),
+    [toppings, selectedToppingIds],
   )
 
   const totalPriceCents = useMemo(() => {
@@ -93,6 +102,10 @@ function PizzaCustomizerPage() {
   }
 
   function handleAddToCart(event) {
+    if (!selectedSize || !selectedCrust) {
+      return
+    }
+
     addItem({
       menuItemId: pizza.id,
       name: pizza.name,
@@ -240,7 +253,11 @@ function PizzaCustomizerPage() {
         </p>
       </section>
 
-      <button type="button" onClick={handleAddToCart}>
+      <button
+        type="button"
+        disabled={!selectedSize || !selectedCrust}
+        onClick={handleAddToCart}
+      >
         Add to cart
       </button>
     </section>

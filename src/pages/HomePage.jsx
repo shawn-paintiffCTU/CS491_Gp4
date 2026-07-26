@@ -1,8 +1,9 @@
+// Landing page: loads restaurant details, promotions, and the photo gallery.
 import { useEffect, useState } from 'react'
 import { getRestaurantInformation } from '../services/restaurantService'
 import { Link } from 'react-router-dom'
-import { getActivePromotions } from '../services/promotionService'
-import { formatCurrency } from '../utils/formatCurrency'
+import { getActivePromotions } from '../services/promotionService.js'
+import { formatCurrency } from '../utils/pricing'
 import PhotoGallery from '../components/PhotoGallery'
 
 function HomePage() {

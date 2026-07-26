@@ -1,8 +1,10 @@
+// Owns cart and promotion state and exposes cart actions to every page.
 import { useMemo, useState } from 'react'
-import { CartContext } from './CartContext'
-import { calculatePromotionDiscount } from '../services/promotionService'
+import { CartContext } from './CartContext.js'
+import { calculatePromotionDiscount } from '../services/promotionService.js'
 
 function createCartItemId(item) {
+  // Configuration IDs prevent differently customized pizzas from merging.
   const sizeId = item.size?.id ?? 'standard'
   const crustId = item.crust?.id ?? 'standard'
 
@@ -36,6 +38,7 @@ export function CartProvider({ children }) {
       )
 
       if (existingItem) {
+        // An identical item increases the existing row instead of making a duplicate.
         return currentItems.map((currentItem) =>
           currentItem.cartItemId === cartItemId
             ? {
@@ -84,6 +87,7 @@ export function CartProvider({ children }) {
     setAppliedPromotion(null)
   }
 
+  // These derived totals update automatically whenever the item list changes.
   const itemCount = items.reduce(
     (total, item) => total + item.quantity,
     0,
@@ -107,6 +111,7 @@ export function CartProvider({ children }) {
     setAppliedPromotion(null)
   }
 
+  // Memoization avoids notifying cart consumers when these values have not changed.
   const value = useMemo(
     () => ({
       items,

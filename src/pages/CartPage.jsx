@@ -1,10 +1,12 @@
+// Cart page: edits quantities, applies promotions, and summarizes the order.
 import { Link } from 'react-router-dom'
-import { useCart } from '../context/useCart'
-import { formatCurrency } from '../utils/formatCurrency'
+import { useCart } from '../context/CartContext'
+import {
+  calculateOrderTotals,
+  formatCurrency,
+} from '../utils/pricing'
 import { useState } from 'react'
-import { validatePromotionCode } from '../services/promotionService'
-
-const TAX_RATE = 0.08
+import { validatePromotionCode } from '../services/promotionService.js'
 
 function CartPage() {
   const {
@@ -18,9 +20,10 @@ function CartPage() {
     removePromotion,
   } = useCart()
 
-  const discountedSubtotalCents = subtotalCents - discountCents
-  const taxCents = Math.round(discountedSubtotalCents * TAX_RATE)
-  const totalCents = discountedSubtotalCents + taxCents
+  const { taxCents, totalCents } = calculateOrderTotals(
+    subtotalCents,
+    discountCents,
+  )
   const [promotionCode, setPromotionCode] = useState('')
   const [promotionMessage, setPromotionMessage] = useState('')
   const [promotionError, setPromotionError] = useState('')

@@ -1,4 +1,9 @@
+// Provides one-second, cursor-adjacent feedback after an item is added.
 import { useEffect, useRef, useState } from 'react'
+
+const NOTIFICATION_DURATION_MS = 1000
+const HORIZONTAL_MARGIN = 130
+const MINIMUM_TOP_POSITION = 60
 
 export function useFloatingNotification() {
   const [notification, setNotification] = useState(null)
@@ -13,6 +18,7 @@ export function useFloatingNotification() {
   function showNotification(message, event) {
     window.clearTimeout(timerReference.current)
 
+    // Use the triggering button as the anchor, with screen-center fallbacks.
     const buttonRectangle =
       event?.currentTarget?.getBoundingClientRect()
 
@@ -28,11 +34,11 @@ export function useFloatingNotification() {
       : fallbackY
 
     const x = Math.min(
-      Math.max(intendedX, 130),
-      window.innerWidth - 130,
+      Math.max(intendedX, HORIZONTAL_MARGIN),
+      window.innerWidth - HORIZONTAL_MARGIN,
     )
 
-    const y = Math.max(intendedY, 60)
+    const y = Math.max(intendedY, MINIMUM_TOP_POSITION)
 
     setNotification({
       message,
@@ -42,9 +48,9 @@ export function useFloatingNotification() {
 
     timerReference.current = window.setTimeout(() => {
       setNotification(null)
-    }, 1000)
+    }, NOTIFICATION_DURATION_MS)
   }
-  
+
   return {
     notification,
     showNotification,

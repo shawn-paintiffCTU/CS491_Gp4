@@ -1,9 +1,11 @@
+// Pickup-only demonstration checkout with contact validation and confirmation.
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useCart } from '../context/useCart'
-import { formatCurrency } from '../utils/formatCurrency'
-
-const TAX_RATE = 0.08
+import { useCart } from '../context/CartContext'
+import {
+  calculateOrderTotals,
+  formatCurrency,
+} from '../utils/pricing'
 
 function CheckoutPage() {
   const {
@@ -20,10 +22,12 @@ function CheckoutPage() {
   const [errors, setErrors] = useState({})
   const [completedOrder, setCompletedOrder] = useState(null)
 
-  const discountedSubtotalCents = subtotalCents - discountCents
-  const taxCents = Math.round(discountedSubtotalCents * TAX_RATE)
-  const totalCents = discountedSubtotalCents + taxCents
+  const { taxCents, totalCents } = calculateOrderTotals(
+    subtotalCents,
+    discountCents,
+  )
 
+  // Client-side checks provide immediate feedback before the demo submission.
   function validateForm() {
     const validationErrors = {}
 
@@ -47,6 +51,7 @@ function CheckoutPage() {
       return
     }
 
+    // Preserve the displayed confirmation totals before clearing shared cart state.
     setCompletedOrder({
       itemCount,
       totalCents,
