@@ -8,7 +8,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 
 function Layout() {
-  const { user, logout } = useAuth()
+  const { user, isManager, logout } = useAuth()
   const navigate = useNavigate()
 
   async function handleLogout() {
@@ -32,6 +32,10 @@ function Layout() {
           <Link to="/menu">Menu</Link>
           <Link to="/cart">Cart</Link>
           <Link to="/checkout">Checkout</Link>
+
+          <Link to="/profile">Profile</Link>
+
+          {isManager && <Link to="/admin">Admin</Link>}
 
           {user ? (
             <>
