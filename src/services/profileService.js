@@ -31,4 +31,27 @@ export async function getUserProfile(userId) {
     role: roleRecord?.role ?? 'customer',
     error: profileError ?? roleError,
   }
+}export async function saveUserProfile(userId, profile) {
+  if (!userId) {
+    return {
+      profile: null,
+      error: new Error('A user ID is required.'),
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      full_name: profile.fullName.trim() || null,
+      phone: profile.phone.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', userId)
+    .select('id, full_name, phone, created_at, updated_at')
+    .single()
+
+  return {
+    profile: data,
+    error,
+  }
 }

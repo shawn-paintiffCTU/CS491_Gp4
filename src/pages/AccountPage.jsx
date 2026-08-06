@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getUserProfile } from '../services/profileService'
+import {
+  getUserProfile,
+  saveUserProfile,
+} from '../services/profileService'
 
 function AccountPage() {
   const { user, loading: authLoading } = useAuth()
 
   const [profile, setProfile] = useState(null)
   const [role, setRole] = useState('customer')
+  const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
   const [profileLoading, setProfileLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     if (!user) {
@@ -19,7 +26,7 @@ function AccountPage() {
 
     async function loadProfile() {
       setProfileLoading(true)
-      setMessage('')
+      setErrorMessage('')
 
       const {
         profile: loadedProfile,
@@ -28,16 +35,65 @@ function AccountPage() {
       } = await getUserProfile(user.id)
 
       if (error) {
-        setMessage(`Unable to load profile: ${error.message}`)
+        setErrorMessage(
+          `Unable to load profile: ${error.message}`,
+        )
       }
 
       setProfile(loadedProfile)
       setRole(loadedRole)
+      setFullName(loadedProfile?.full_name ?? '')
+      setPhone(loadedProfile?.phone ?? '')
       setProfileLoading(false)
     }
 
     loadProfile()
   }, [user])
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    setMessage('')
+    setErrorMessage('')
+
+    if (fullName.trim().length > 100) {
+      setErrorMessage(
+        'Full name must be 100 characters or fewer.',
+      )
+      return
+    }
+
+    if (
+      phone.trim() &&
+      !/^[0-9()+\-\s]{7,20}$/.test(phone.trim())
+    ) {
+      setErrorMessage('Enter a valid phone number.')
+      return
+    }
+
+    setSaving(true)
+
+    const {
+      profile: savedProfile,
+      error,
+    } = await saveUserProfile(user.id, {
+      fullName,
+      phone,
+    })
+
+    if (error) {
+      setErrorMessage(
+        `Unable to save profile: ${error.message}`,
+      )
+      setSaving(false)
+      return
+    }
+
+    setProfile(savedProfile)
+    setFullName(savedProfile?.full_name ?? '')
+    setPhone(savedProfile?.phone ?? '')
+    setMessage('Profile updated successfully.')
+    setSaving(false)
+  }
 
   if (authLoading) {
     return (
@@ -65,38 +121,72 @@ function AccountPage() {
     <section className="account-page">
       <h2>My Account</h2>
 
-      {message && <p role="alert">{message}</p>}
+      {message && <p role="status">{message}</p>}
+      {errorMessage && <p role="alert">{errorMessage}</p>}
 
-      <dl>
+      <form onSubmit={handleSubmit}>
         <div>
-          <dt>Email</dt>
-          <dd>{user.email}</dd>
+          <label htmlFor="account-email">Email</label>
+          <input
+            id="account-email"
+            type="email"
+            value={user.email ?? ''}
+            disabled
+          />
         </div>
 
         <div>
-          <dt>Full name</dt>
-          <dd>{profile?.full_name || 'Not provided'}</dd>
+          <label htmlFor="full-name">Full name</label>
+          <input
+            id="full-name"
+            type="text"
+            value={fullName}
+            maxLength="100"
+            onChange={(event) =>
+              setFullName(event.target.value)
+            }
+          />
         </div>
 
         <div>
-          <dt>Phone</dt>
-          <dd>{profile?.phone || 'Not provided'}</dd>
+          <label htmlFor="account-phone">Phone</label>
+          <input
+            id="account-phone"
+            type="tel"
+            value={phone}
+            maxLength="20"
+            onChange={(event) =>
+              setPhone(event.target.value)
+            }
+          />
         </div>
 
-        <div>
-          <dt>Account role</dt>
-          <dd>{role}</dd>
-        </div>
+        <button type="submit" disabled={saving}>
+          {saving ? 'Saving...' : 'Save Profile'}
+        </button>
+      </form>
 
-        <div>
-          <dt>Account created</dt>
-          <dd>
-            {profile?.created_at
-              ? new Date(profile.created_at).toLocaleString()
-              : 'Not available'}
-          </dd>
-        </div>
-      </dl>
+      <section>
+        <h3>Account Details</h3>
+
+        <dl>
+          <div>
+            <dt>Role</dt>
+            <dd>{role}</dd>
+          </div>
+
+          <div>
+            <dt>Account created</dt>
+            <dd>
+              {profile?.created_at
+                ? new Date(
+                  profile.created_at,
+                ).toLocaleString()
+                : 'Not available'}
+            </dd>
+          </div>
+        </dl>
+      </section>
     </section>
   )
 }
