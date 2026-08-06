@@ -14,6 +14,7 @@ import CheckoutPage from './pages/CheckoutPage'
 import PizzaCustomizerPage from './pages/PizzaCustomizerPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import AccountPage from './pages/AccountPage'
 
 import './App.css'
 
@@ -41,6 +42,7 @@ function App() {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/account" element={<AccountPage />} />
         </Route>
       </Routes>
     </Router>

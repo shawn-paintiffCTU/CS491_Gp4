@@ -1,13 +1,10 @@
 // Shared frame shown around every page: header, navigation, content, and footer.
-import {
-  Link,
-  Outlet,
-  useNavigate,
-} from 'react-router-dom'
-
+import { Link, Outlet, useNavigate } from 'react-router-dom'
+import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 
 function Layout() {
+  const { itemCount } = useCart()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -15,7 +12,7 @@ function Layout() {
     const { error } = await logout()
 
     if (error) {
-      console.error('Logout error:', error.message)
+      console.error('Logout failed:', error.message)
       return
     }
 
@@ -27,16 +24,17 @@ function Layout() {
       <header>
         <h1>Plethora of PIES!</h1>
 
-        <nav>
+        <nav aria-label="Primary navigation">
           <Link to="/">Home</Link>
           <Link to="/menu">Menu</Link>
-          <Link to="/cart">Cart</Link>
+          <Link to="/cart">
+            Cart{itemCount > 0 ? ` (${itemCount})` : ''}
+          </Link>
           <Link to="/checkout">Checkout</Link>
 
           {user ? (
             <>
-              <span>{user.email}</span>
-
+              <Link to="/account">My Account</Link>
               <button type="button" onClick={handleLogout}>
                 Logout
               </button>
@@ -50,10 +48,12 @@ function Layout() {
         </nav>
       </header>
 
-      <Outlet />
+      <main>
+        <Outlet />
+      </main>
 
       <footer>
-        2026 Plethora of PIES!: CTU CS491 Group4 Demonstration
+        <p>2026 Plethora of PIES!: CTU CS491 Group4 Demonstration</p>
       </footer>
     </>
   )
