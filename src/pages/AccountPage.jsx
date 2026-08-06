@@ -118,8 +118,13 @@ function AccountPage() {
   }
 
   return (
-    <section className="account-page">
-      <h2>My Account</h2>
+  <section className="account-page">
+    <h2>
+      Welcome back,{' '}
+      {profile?.full_name?.trim() || user.email}!
+    </h2>
+
+    <h3>My Account</h3>
 
       {message && <p role="status">{message}</p>}
       {errorMessage && <p role="alert">{errorMessage}</p>}
