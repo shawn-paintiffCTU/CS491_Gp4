@@ -192,6 +192,21 @@ function AccountPage() {
           </div>
         </dl>
       </section>
+      <section className="order-history">
+  <h3>Recent Orders</h3>
+
+  <p>
+    Your previous orders will appear here once you begin
+    placing orders.
+  </p>
+
+  <button
+    type="button"
+    onClick={() => window.location.href = '/menu'}
+  >
+    Order a Pizza
+  </button>
+</section>
     </section>
   )
 }
