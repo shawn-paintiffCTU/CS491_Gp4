@@ -1,12 +1,45 @@
 // Shared frame shown around every page: header, navigation, content, and footer.
+import { useEffect, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
+import { getUserProfile } from '../services/profileService'
+
 
 function Layout() {
   const { itemCount } = useCart()
   const { user, logout } = useAuth()
+  const [role, setRole] = useState(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!user) {
+      setRole(null)
+      return
+    }
+
+    async function loadUserProfile() {
+      const { role: loadedRole } = await getUserProfile(user.id)
+      const normalizedRole = loadedRole?.trim().toLowerCase()
+      setRole(normalizedRole)
+    }
+
+    loadUserProfile()
+  }, [user])
+
+  useEffect(() => {
+  if (!user) {
+    setRole(null)
+    return
+  }
+
+  async function loadRole() {
+    const { role: loadedRole } = await getUserProfile(user.id)
+    setRole(loadedRole?.trim().toLowerCase() ?? null)
+  }
+
+  loadRole()
+}, [user])
 
   async function handleLogout() {
     const { error } = await logout()
@@ -33,13 +66,18 @@ function Layout() {
           <Link to="/checkout">Checkout</Link>
 
           {user ? (
-            <>
-              <Link to="/account">My Account</Link>
-              <button type="button" onClick={handleLogout}>
-                Logout
-              </button>
-            </>
-          ) : (
+  <>
+    <Link to="/account">My Account</Link>
+
+    {role === 'admin' && (
+      <Link to="/admin/orders">Admin Orders</Link>
+    )}
+
+    <button type="button" onClick={handleLogout}>
+      Logout
+    </button>
+  </>
+) : (
             <>
               <Link to="/login">Login</Link>
               <Link to="/register">Register</Link>

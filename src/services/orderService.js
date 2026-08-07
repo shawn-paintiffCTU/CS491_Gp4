@@ -100,3 +100,67 @@ export async function getUserOrders(userId) {
     error,
   }
 }
+
+export async function getAllOrders() {
+  const { data, error } = await supabase
+    .from('orders')
+    .select(`
+      id,
+      user_id,
+      status,
+      item_count,
+      subtotal_cents,
+      discount_cents,
+      tax_cents,
+      total_cents,
+      promotion_code,
+      fulfillment_method,
+      created_at,
+      order_items (
+        id,
+        item_name,
+        quantity,
+        unit_price_cents,
+        size_name,
+        crust_name,
+        toppings
+      )
+    `)
+    .order('created_at', { ascending: false })
+
+  return {
+    orders: data ?? [],
+    error,
+  }
+}
+
+export async function updateOrderStatus(orderId, status) {
+  const allowedStatuses = [
+    'placed',
+    'preparing',
+    'ready',
+    'completed',
+    'cancelled',
+  ]
+
+  if (!allowedStatuses.includes(status)) {
+    return {
+      order: null,
+      error: new Error('Invalid order status.'),
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('orders')
+    .update({
+      status,
+    })
+    .eq('id', orderId)
+    .select()
+    .single()
+
+  return {
+    order: data,
+    error,
+  }
+}
