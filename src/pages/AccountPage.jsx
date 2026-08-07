@@ -239,8 +239,11 @@ function AccountPage() {
           </p>
 
           <p>
-            <strong>Status:</strong> {order.status}
-          </p>
+  <strong>Status:</strong>{' '}
+  <span className={`order-status order-status-${order.status}`}>
+    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+  </span>
+</p>
 
           <p>
             <strong>Total:</strong> $
@@ -252,12 +255,32 @@ function AccountPage() {
           </p>
 
           <ul>
-            {order.order_items.map((item) => (
-              <li key={item.id}>
-                {item.quantity} × {item.item_name}
-              </li>
-            ))}
-          </ul>
+  {order.order_items.map((item) => (
+    <li key={item.id}>
+      <strong>
+        {item.quantity} × {item.item_name}
+      </strong>
+
+      {item.size_name && (
+        <span> — {item.size_name}</span>
+      )}
+
+      {item.crust_name && (
+        <span>, {item.crust_name}</span>
+      )}
+
+      {Array.isArray(item.toppings) &&
+        item.toppings.length > 0 && (
+          <div>
+            Toppings:{' '}
+            {item.toppings
+              .map((topping) => topping.name ?? topping)
+              .join(', ')}
+          </div>
+        )}
+    </li>
+  ))}
+</ul>
         </article>
       ))}
 
