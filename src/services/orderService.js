@@ -60,3 +60,43 @@ export async function createOrder({
     error: null,
   }
 }
+
+export async function getUserOrders(userId) {
+  if (!userId) {
+    return {
+      orders: [],
+      error: new Error('A user ID is required.'),
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('orders')
+    .select(`
+      id,
+      status,
+      item_count,
+      subtotal_cents,
+      discount_cents,
+      tax_cents,
+      total_cents,
+      promotion_code,
+      fulfillment_method,
+      created_at,
+      order_items (
+        id,
+        item_name,
+        quantity,
+        unit_price_cents,
+        size_name,
+        crust_name,
+        toppings
+      )
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  return {
+    orders: data ?? [],
+    error,
+  }
+}

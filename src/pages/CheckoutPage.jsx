@@ -2,6 +2,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
+import { createOrder } from '../services/orderService'
 import {
   calculateOrderTotals,
   formatCurrency,
@@ -17,17 +19,21 @@ function CheckoutPage() {
     clearCart,
   } = useCart()
 
+  const { user } = useAuth()
+
   const [customerName, setCustomerName] = useState('')
   const [phone, setPhone] = useState('')
   const [errors, setErrors] = useState({})
   const [completedOrder, setCompletedOrder] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [orderError, setOrderError] = useState('')
 
   const { taxCents, totalCents } = calculateOrderTotals(
     subtotalCents,
     discountCents,
   )
 
-  // Client-side checks provide immediate feedback before the demo submission.
+  // Client-side checks provide immediate feedback before submission.
   function validateForm() {
     const validationErrors = {}
 
@@ -44,20 +50,46 @@ function CheckoutPage() {
     return Object.keys(validationErrors).length === 0
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+    setOrderError('')
 
     if (!validateForm()) {
       return
     }
 
-    // Preserve the displayed confirmation totals before clearing shared cart state.
+    if (!user) {
+      setOrderError('Please log in before placing an order.')
+      return
+    }
+
+    setSubmitting(true)
+
+    const { order, error } = await createOrder({
+      user,
+      items,
+      itemCount,
+      subtotalCents,
+      discountCents,
+      taxCents,
+      totalCents,
+      promotionCode: appliedPromotion?.code ?? null,
+    })
+
+    if (error) {
+      setOrderError(`Unable to place order: ${error.message}`)
+      setSubmitting(false)
+      return
+    }
+
     setCompletedOrder({
+      orderId: order.id,
       itemCount,
       totalCents,
     })
 
     clearCart()
+    setSubmitting(false)
   }
 
   if (completedOrder) {
@@ -72,6 +104,10 @@ function CheckoutPage() {
         </p>
 
         <p>
+          <strong>Order ID:</strong> {completedOrder.orderId}
+        </p>
+
+        <p>
           <strong>
             Demonstration total:{' '}
             {formatCurrency(completedOrder.totalCents)}
@@ -83,10 +119,12 @@ function CheckoutPage() {
         </p>
 
         <p>
-          No payment was processed and no customer information was
-          transmitted or stored.
+          No payment was processed. The demonstration order was saved
+          to your account for order-history testing.
         </p>
 
+        <Link to="/account">View My Account</Link>
+        {' | '}
         <Link to="/menu">Return to menu</Link>
       </section>
     )
@@ -112,7 +150,6 @@ function CheckoutPage() {
       </p>
 
       <form onSubmit={handleSubmit} noValidate>
-
         <section className="pickup-notice">
           <h3>Pickup Order</h3>
           <p>
@@ -164,23 +201,30 @@ function CheckoutPage() {
           <h3>Order Summary</h3>
           <p>Items: {itemCount}</p>
           <p>Subtotal: {formatCurrency(subtotalCents)}</p>
+
           {appliedPromotion && discountCents > 0 && (
             <>
-              <p>
-                Promotion: {appliedPromotion.code}
-              </p>
-              <p>
-                Discount: −{formatCurrency(discountCents)}
-              </p>
+              <p>Promotion: {appliedPromotion.code}</p>
+              <p>Discount: −{formatCurrency(discountCents)}</p>
             </>
           )}
+
           <p>Estimated tax: {formatCurrency(taxCents)}</p>
+
           <p>
             <strong>Total: {formatCurrency(totalCents)}</strong>
           </p>
         </section>
 
-        <button type="submit">Place test order</button>
+        {orderError && (
+          <p role="alert">
+            {orderError}
+          </p>
+        )}
+
+        <button type="submit" disabled={submitting}>
+          {submitting ? 'Placing order...' : 'Place test order'}
+        </button>
       </form>
     </section>
   )

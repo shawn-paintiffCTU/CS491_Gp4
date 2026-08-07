@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { getUserOrders } from '../services/orderService'
 import {
   getUserProfile,
   saveUserProfile,
@@ -17,38 +18,56 @@ function AccountPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+  const [orders, setOrders] = useState([])
+  const [ordersLoading, setOrdersLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) {
-      setProfileLoading(false)
-      return
+  if (!user) {
+    setProfileLoading(false)
+    setOrdersLoading(false)
+    return
+  }
+
+  async function loadAccountData() {
+    setProfileLoading(true)
+    setOrdersLoading(true)
+    setErrorMessage('')
+
+    const {
+      profile: loadedProfile,
+      role: loadedRole,
+      error: profileError,
+    } = await getUserProfile(user.id)
+
+    if (profileError) {
+      setErrorMessage(
+        `Unable to load profile: ${profileError.message}`,
+      )
     }
 
-    async function loadProfile() {
-      setProfileLoading(true)
-      setErrorMessage('')
+    setProfile(loadedProfile)
+    setRole(loadedRole)
+    setFullName(loadedProfile?.full_name ?? '')
+    setPhone(loadedProfile?.phone ?? '')
+    setProfileLoading(false)
 
-      const {
-        profile: loadedProfile,
-        role: loadedRole,
-        error,
-      } = await getUserProfile(user.id)
+    const {
+      orders: loadedOrders,
+      error: ordersError,
+    } = await getUserOrders(user.id)
 
-      if (error) {
-        setErrorMessage(
-          `Unable to load profile: ${error.message}`,
-        )
-      }
-
-      setProfile(loadedProfile)
-      setRole(loadedRole)
-      setFullName(loadedProfile?.full_name ?? '')
-      setPhone(loadedProfile?.phone ?? '')
-      setProfileLoading(false)
+    if (ordersError) {
+      setErrorMessage(
+        `Unable to load orders: ${ordersError.message}`,
+      )
     }
 
-    loadProfile()
-  }, [user])
+    setOrders(loadedOrders)
+    setOrdersLoading(false)
+  }
+
+  loadAccountData()
+}, [user])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -195,17 +214,61 @@ function AccountPage() {
       <section className="order-history">
   <h3>Recent Orders</h3>
 
-  <p>
-    Your previous orders will appear here once you begin
-    placing orders.
-  </p>
+  {ordersLoading ? (
+    <p>Loading orders...</p>
+  ) : orders.length === 0 ? (
+    <>
+      <p>No orders have been placed yet.</p>
 
-  <button
-    type="button"
-    onClick={() => window.location.href = '/menu'}
-  >
-    Order a Pizza
-  </button>
+      <button
+        type="button"
+        onClick={() => (window.location.href = '/menu')}
+      >
+        Order a Pizza
+      </button>
+    </>
+  ) : (
+    <>
+      {orders.map((order) => (
+        <article key={order.id} className="order-card">
+          <h4>Order #{order.id}</h4>
+
+          <p>
+            <strong>Date:</strong>{' '}
+            {new Date(order.created_at).toLocaleString()}
+          </p>
+
+          <p>
+            <strong>Status:</strong> {order.status}
+          </p>
+
+          <p>
+            <strong>Total:</strong> $
+            {(order.total_cents / 100).toFixed(2)}
+          </p>
+
+          <p>
+            <strong>Items:</strong>
+          </p>
+
+          <ul>
+            {order.order_items.map((item) => (
+              <li key={item.id}>
+                {item.quantity} × {item.item_name}
+              </li>
+            ))}
+          </ul>
+        </article>
+      ))}
+
+      <button
+        type="button"
+        onClick={() => (window.location.href = '/menu')}
+      >
+        Order Again
+      </button>
+    </>
+  )}
 </section>
     </section>
   )
