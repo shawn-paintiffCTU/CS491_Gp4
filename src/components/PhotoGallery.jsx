@@ -1,5 +1,5 @@
 // Reusable home-page gallery generated from gallery.json.
-import galleryImages from '../data/gallery.json'
+import galleryImages from "../data/gallery.json";
 
 function PhotoGallery() {
   return (
@@ -11,7 +11,7 @@ function PhotoGallery() {
         {galleryImages.map((image) => (
           <figure key={image.id} className="gallery-item">
             <img
-              src={`${import.meta.env.BASE_URL}${image.src.replace(/^\//, '')}`}
+              src={`${import.meta.env.BASE_URL}${image.src.replace(/^\//, "")}`}
               alt={image.alt}
               width="1200"
               height="800"
@@ -24,7 +24,7 @@ function PhotoGallery() {
         ))}
       </div>
     </section>
-  )
+  );
 }
 
-export default PhotoGallery
+export default PhotoGallery;

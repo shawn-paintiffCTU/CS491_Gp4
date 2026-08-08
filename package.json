@@ -1,7 +1,7 @@
 {
   "name": "cs491-gp4",
   "productName": "Plethora of PIES",
-  "description": "Sprint 1 executable build for the CS492 Group Project",
+  "description": "Pickup ordering demonstration for the CS492 Group Project",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -37,7 +37,7 @@
   "build": {
     "appId": "edu.ctu.cs492.plethoraofpies",
     "productName": "Plethora of PIES",
-    "artifactName": "PlethoraOfPIES_Sprint1.${ext}",
+    "artifactName": "PlethoraOfPIES.${ext}",
     "asar": true,
     "files": [
       "dist/**/*",

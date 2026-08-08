@@ -1,117 +1,110 @@
-import { useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { getUserOrders } from '../services/orderService'
+import { useEffect, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { getUserOrders } from "../services/orderService";
+import { formatCurrency } from "../utils/pricing";
 import {
-  getUserProfile,
-  saveUserProfile,
-} from '../services/profileService'
+  NAME_MAX_LENGTH,
+  PHONE_MAX_LENGTH,
+  validateContactInformation,
+} from "../utils/contactValidation";
 
 function AccountPage() {
-  const { user, loading: authLoading } = useAuth()
+  const {
+    user,
+    profile,
+    role,
+    paymentMethod,
+    loading: authLoading,
+    updateProfile,
+    deletePaymentMethod,
+  } = useAuth();
 
-  const [profile, setProfile] = useState(null)
-  const [role, setRole] = useState('customer')
-  const [fullName, setFullName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [profileLoading, setProfileLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
-  const [errorMessage, setErrorMessage] = useState('')
-  const [orders, setOrders] = useState([])
-  const [ordersLoading, setOrdersLoading] = useState(true)
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [removingPaymentMethod, setRemovingPaymentMethod] = useState(false);
+  const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
-  if (!user) {
-    setProfileLoading(false)
-    setOrdersLoading(false)
-    return
-  }
-
-  async function loadAccountData() {
-    setProfileLoading(true)
-    setOrdersLoading(true)
-    setErrorMessage('')
-
-    const {
-      profile: loadedProfile,
-      role: loadedRole,
-      error: profileError,
-    } = await getUserProfile(user.id)
-
-    if (profileError) {
-      setErrorMessage(
-        `Unable to load profile: ${profileError.message}`,
-      )
+    if (!user) {
+      return undefined;
     }
 
-    setProfile(loadedProfile)
-    setRole(loadedRole)
-    setFullName(loadedProfile?.full_name ?? '')
-    setPhone(loadedProfile?.phone ?? '')
-    setProfileLoading(false)
+    let isActive = true;
 
-    const {
-      orders: loadedOrders,
-      error: ordersError,
-    } = await getUserOrders(user.id)
+    async function loadOrders() {
+      const { orders: loadedOrders, error } = await getUserOrders(user.id);
 
-    if (ordersError) {
-      setErrorMessage(
-        `Unable to load orders: ${ordersError.message}`,
-      )
+      if (!isActive) {
+        return;
+      }
+
+      if (error) {
+        setErrorMessage(`Unable to load orders: ${error.message}`);
+        setOrders([]);
+      } else {
+        setOrders(loadedOrders);
+      }
+
+      setOrdersLoading(false);
     }
 
-    setOrders(loadedOrders)
-    setOrdersLoading(false)
-  }
+    loadOrders();
 
-  loadAccountData()
-}, [user])
+    return () => {
+      isActive = false;
+    };
+  }, [user]);
 
   async function handleSubmit(event) {
-    event.preventDefault()
-    setMessage('')
-    setErrorMessage('')
+    event.preventDefault();
+    setMessage("");
+    setErrorMessage("");
 
-    if (fullName.trim().length > 100) {
-      setErrorMessage(
-        'Full name must be 100 characters or fewer.',
-      )
-      return
+    const formData = new FormData(event.currentTarget);
+
+    const validation = validateContactInformation({
+      fullName: formData.get("fullName")?.toString() ?? "",
+      phone: formData.get("phone")?.toString() ?? "",
+    });
+
+    setValidationErrors(validation.errors);
+
+    if (!validation.isValid) {
+      return;
     }
 
-    if (
-      phone.trim() &&
-      !/^[0-9()+\-\s]{7,20}$/.test(phone.trim())
-    ) {
-      setErrorMessage('Enter a valid phone number.')
-      return
-    }
+    setSaving(true);
 
-    setSaving(true)
-
-    const {
-      profile: savedProfile,
-      error,
-    } = await saveUserProfile(user.id, {
-      fullName,
-      phone,
-    })
+    const { error } = await updateProfile(validation.values);
 
     if (error) {
-      setErrorMessage(
-        `Unable to save profile: ${error.message}`,
-      )
-      setSaving(false)
-      return
+      setErrorMessage(`Unable to save profile: ${error.message}`);
+      setSaving(false);
+      return;
     }
 
-    setProfile(savedProfile)
-    setFullName(savedProfile?.full_name ?? '')
-    setPhone(savedProfile?.phone ?? '')
-    setMessage('Profile updated successfully.')
-    setSaving(false)
+    setMessage("Profile updated successfully.");
+    setSaving(false);
+  }
+
+  async function handleRemovePaymentMethod() {
+    setMessage("");
+    setErrorMessage("");
+    setRemovingPaymentMethod(true);
+
+    const { error } = await deletePaymentMethod();
+
+    if (error) {
+      setErrorMessage(`Unable to remove saved card: ${error.message}`);
+    } else {
+      setMessage("Saved card removed successfully.");
+    }
+
+    setRemovingPaymentMethod(false);
   }
 
   if (authLoading) {
@@ -120,75 +113,93 @@ function AccountPage() {
         <h2>My Account</h2>
         <p>Loading account...</p>
       </section>
-    )
+    );
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />
-  }
-
-  if (profileLoading) {
-    return (
-      <section>
-        <h2>My Account</h2>
-        <p>Loading profile...</p>
-      </section>
-    )
+    return <Navigate to="/login" replace />;
   }
 
   return (
-  <section className="account-page">
-    <h2>
-      Welcome back,{' '}
-      {profile?.full_name?.trim() || user.email}!
-    </h2>
-
-    <h3>My Account</h3>
+    <section className="account-page">
+      <h2>Welcome back, {profile?.full_name?.trim() || user.email}!</h2>
 
       {message && <p role="status">{message}</p>}
+
       {errorMessage && <p role="alert">{errorMessage}</p>}
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="account-email">Email</label>
-          <input
-            id="account-email"
-            type="email"
-            value={user.email ?? ''}
-            disabled
-          />
-        </div>
+      <section>
+        <h3>Profile Information</h3>
 
-        <div>
-          <label htmlFor="full-name">Full name</label>
-          <input
-            id="full-name"
-            type="text"
-            value={fullName}
-            maxLength="100"
-            onChange={(event) =>
-              setFullName(event.target.value)
-            }
-          />
-        </div>
+        <form
+          key={profile?.updated_at ?? "new-profile"}
+          onSubmit={handleSubmit}
+          noValidate
+        >
+          <div>
+            <label htmlFor="account-email">Email</label>
 
-        <div>
-          <label htmlFor="account-phone">Phone</label>
-          <input
-            id="account-phone"
-            type="tel"
-            value={phone}
-            maxLength="20"
-            onChange={(event) =>
-              setPhone(event.target.value)
-            }
-          />
-        </div>
+            <input
+              id="account-email"
+              type="email"
+              value={user.email ?? ""}
+              disabled
+            />
+          </div>
 
-        <button type="submit" disabled={saving}>
-          {saving ? 'Saving...' : 'Save Profile'}
-        </button>
-      </form>
+          <div>
+            <label htmlFor="account-full-name">Full name</label>
+
+            <input
+              id="account-full-name"
+              name="fullName"
+              type="text"
+              defaultValue={profile?.full_name ?? ""}
+              maxLength={NAME_MAX_LENGTH}
+              autoComplete="name"
+              aria-invalid={Boolean(validationErrors.fullName)}
+              aria-describedby={
+                validationErrors.fullName
+                  ? "account-full-name-error"
+                  : undefined
+              }
+            />
+
+            {validationErrors.fullName && (
+              <p id="account-full-name-error" role="alert">
+                {validationErrors.fullName}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="account-phone">Phone</label>
+
+            <input
+              id="account-phone"
+              name="phone"
+              type="tel"
+              defaultValue={profile?.phone ?? ""}
+              maxLength={PHONE_MAX_LENGTH}
+              autoComplete="tel"
+              aria-invalid={Boolean(validationErrors.phone)}
+              aria-describedby={
+                validationErrors.phone ? "account-phone-error" : undefined
+              }
+            />
+
+            {validationErrors.phone && (
+              <p id="account-phone-error" role="alert">
+                {validationErrors.phone}
+              </p>
+            )}
+          </div>
+
+          <button type="submit" disabled={saving}>
+            {saving ? "Saving..." : "Save Profile"}
+          </button>
+        </form>
+      </section>
 
       <section>
         <h3>Account Details</h3>
@@ -196,111 +207,131 @@ function AccountPage() {
         <dl>
           <div>
             <dt>Role</dt>
-            <dd>{role}</dd>
+            <dd>{role ?? "customer"}</dd>
           </div>
 
           <div>
             <dt>Account created</dt>
             <dd>
               {profile?.created_at
-                ? new Date(
-                  profile.created_at,
-                ).toLocaleString()
-                : 'Not available'}
+                ? new Date(profile.created_at).toLocaleString()
+                : "Not available"}
             </dd>
           </div>
         </dl>
       </section>
-      <section className="order-history">
-  <h3>Recent Orders</h3>
 
-  {ordersLoading ? (
-    <p>Loading orders...</p>
-  ) : orders.length === 0 ? (
-    <>
-      <p>No orders have been placed yet.</p>
+      <section>
+        <h3>Saved Payment Method</h3>
 
-      <button
-        type="button"
-        onClick={() => (window.location.href = '/menu')}
-      >
-        Order a Pizza
-      </button>
-    </>
-  ) : (
-    <>
-      {orders.map((order) => (
-        <article key={order.id} className="order-card">
-          <h4>Order #{order.id}</h4>
+        {paymentMethod ? (
+          <>
+            <p>
+              <strong>{paymentMethod.cardBrand}</strong> ending in{" "}
+              {paymentMethod.lastFour}
+            </p>
 
+            <p>Cardholder: {paymentMethod.cardholderName}</p>
+
+            <p>
+              Expires: {String(paymentMethod.expirationMonth).padStart(2, "0")}/
+              {String(paymentMethod.expirationYear).slice(-2)}
+            </p>
+
+            <p>
+              Only the card brand, last four digits, cardholder name, and
+              expiration are stored. Full card numbers and security codes are
+              never saved.
+            </p>
+
+            <button
+              type="button"
+              disabled={removingPaymentMethod}
+              onClick={handleRemovePaymentMethod}
+            >
+              {removingPaymentMethod ? "Removing..." : "Remove Saved Card"}
+            </button>
+          </>
+        ) : (
           <p>
-            <strong>Date:</strong>{' '}
-            {new Date(order.created_at).toLocaleString()}
+            No card is saved. You can save safe card metadata during checkout.
           </p>
-
-          <p>
-  <strong>Status:</strong>{' '}
-  <span className={`order-status order-status-${order.status}`}>
-    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-  </span>
-</p>
-<p>
-  <strong>Fulfillment:</strong>{' '}
-  {order.fulfillment_method === 'delivery'
-    ? 'Delivery'
-    : 'In-Store Pickup'}
-</p>
-
-          <p>
-            <strong>Total:</strong> $
-            {(order.total_cents / 100).toFixed(2)}
-          </p>
-
-          <p>
-            <strong>Items:</strong>
-          </p>
-
-          <ul>
-  {order.order_items.map((item) => (
-    <li key={item.id}>
-      <strong>
-        {item.quantity} × {item.item_name}
-      </strong>
-
-      {item.size_name && (
-        <span> — {item.size_name}</span>
-      )}
-
-      {item.crust_name && (
-        <span>, {item.crust_name}</span>
-      )}
-
-      {Array.isArray(item.toppings) &&
-        item.toppings.length > 0 && (
-          <div>
-            Toppings:{' '}
-            {item.toppings
-              .map((topping) => topping.name ?? topping)
-              .join(', ')}
-          </div>
         )}
-    </li>
-  ))}
-</ul>
-        </article>
-      ))}
+      </section>
 
-      <button
-        type="button"
-        onClick={() => (window.location.href = '/menu')}
-      >
-        Order Again
-      </button>
-    </>
-  )}
-</section>
+      <section className="order-history">
+        <h3>Recent Orders</h3>
+
+        {ordersLoading ? (
+          <p>Loading orders...</p>
+        ) : orders.length === 0 ? (
+          <>
+            <p>No orders have been placed yet.</p>
+            <Link to="/menu">Order a Pizza</Link>
+          </>
+        ) : (
+          <>
+            {orders.map((order) => (
+              <article key={order.id} className="order-card">
+                <h4>Order #{order.id}</h4>
+
+                <p>
+                  <strong>Date:</strong>{" "}
+                  {new Date(order.created_at).toLocaleString()}
+                </p>
+
+                <p>
+                  <strong>Status:</strong>{" "}
+                  <span className={`order-status order-status-${order.status}`}>
+                    {order.status.charAt(0).toUpperCase() +
+                      order.status.slice(1)}
+                  </span>
+                </p>
+
+                <p>
+                  <strong>Fulfillment:</strong> In-Store Pickup
+                </p>
+
+                <p>
+                  <strong>Total:</strong> {formatCurrency(order.total_cents)}
+                </p>
+
+                <p>
+                  <strong>Items:</strong>
+                </p>
+
+                <ul>
+                  {order.order_items?.map((item) => (
+                    <li key={item.id}>
+                      <strong>
+                        {item.quantity} × {item.item_name}
+                      </strong>
+
+                      {item.size_name && <span> — {item.size_name}</span>}
+
+                      {item.crust_name && <span>, {item.crust_name}</span>}
+
+                      {Array.isArray(item.toppings) &&
+                        item.toppings.length > 0 && (
+                          <div>
+                            Toppings:{" "}
+                            {item.toppings
+                              .map((topping) => topping.name ?? topping)
+                              .join(", ")}
+                          </div>
+                        )}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+
+            <Link to="/menu">Order Again</Link>
+          </>
+        )}
+      </section>
     </section>
-  )
+  );
 }
 
-export default AccountPage
+export default AccountPage;

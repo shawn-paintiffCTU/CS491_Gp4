@@ -1,12 +1,9 @@
 // Cart page: edits quantities, applies promotions, and summarizes the order.
-import { Link } from 'react-router-dom'
-import { useCart } from '../context/CartContext'
-import {
-  calculateOrderTotals,
-  formatCurrency,
-} from '../utils/pricing'
-import { useState } from 'react'
-import { validatePromotionCode } from '../services/promotionService.js'
+import { Link } from "react-router-dom";
+import { useCart } from "../context/CartContext";
+import { calculateOrderTotals, formatCurrency } from "../utils/pricing";
+import { useState } from "react";
+import { validatePromotionCode } from "../services/promotionService.js";
 
 function CartPage() {
   const {
@@ -18,34 +15,31 @@ function CartPage() {
     removeItem,
     applyPromotion,
     removePromotion,
-  } = useCart()
+  } = useCart();
 
   const { taxCents, totalCents } = calculateOrderTotals(
     subtotalCents,
     discountCents,
-  )
-  const [promotionCode, setPromotionCode] = useState('')
-  const [promotionMessage, setPromotionMessage] = useState('')
-  const [promotionError, setPromotionError] = useState('')
+  );
+  const [promotionCode, setPromotionCode] = useState("");
+  const [promotionMessage, setPromotionMessage] = useState("");
+  const [promotionError, setPromotionError] = useState("");
 
   async function handlePromotionSubmit(event) {
-    event.preventDefault()
+    event.preventDefault();
 
-    const result = await validatePromotionCode(
-      promotionCode,
-      subtotalCents,
-    )
+    const result = await validatePromotionCode(promotionCode, subtotalCents);
 
     if (!result.isValid) {
-      setPromotionError(result.message)
-      setPromotionMessage('')
-      return
+      setPromotionError(result.message);
+      setPromotionMessage("");
+      return;
     }
 
-    applyPromotion(result.promotion)
-    setPromotionError('')
-    setPromotionMessage(result.message)
-    setPromotionCode('')
+    applyPromotion(result.promotion);
+    setPromotionError("");
+    setPromotionMessage(result.message);
+    setPromotionCode("");
   }
 
   if (items.length === 0) {
@@ -55,7 +49,7 @@ function CartPage() {
         <p>Your cart is currently empty.</p>
         <Link to="/menu">Browse the menu</Link>
       </section>
-    )
+    );
   }
 
   return (
@@ -75,19 +69,15 @@ function CartPage() {
                   </p>
 
                   <p>
-                    <strong>Toppings:</strong>{' '}
+                    <strong>Toppings:</strong>{" "}
                     {item.toppings.length > 0
-                      ? item.toppings
-                        .map((topping) => topping.name)
-                        .join(', ')
-                      : 'None'}
+                      ? item.toppings.map((topping) => topping.name).join(", ")
+                      : "None"}
                   </p>
                 </>
               )}
 
-              <p>
-                {formatCurrency(item.unitPriceCents)} each
-              </p>
+              <p>{formatCurrency(item.unitPriceCents)} each</p>
             </div>
 
             <div className="quantity-controls">
@@ -96,10 +86,7 @@ function CartPage() {
                 aria-label={`Decrease quantity of ${item.name}`}
                 disabled={item.quantity === 1}
                 onClick={() =>
-                  updateQuantity(
-                    item.cartItemId,
-                    item.quantity - 1,
-                  )
+                  updateQuantity(item.cartItemId, item.quantity - 1)
                 }
               >
                 −
@@ -113,10 +100,7 @@ function CartPage() {
                 type="button"
                 aria-label={`Increase quantity of ${item.name}`}
                 onClick={() =>
-                  updateQuantity(
-                    item.cartItemId,
-                    item.quantity + 1,
-                  )
+                  updateQuantity(item.cartItemId, item.quantity + 1)
                 }
               >
                 +
@@ -125,16 +109,11 @@ function CartPage() {
 
             <p>
               <strong>
-                {formatCurrency(
-                  item.unitPriceCents * item.quantity,
-                )}
+                {formatCurrency(item.unitPriceCents * item.quantity)}
               </strong>
             </p>
 
-            <button
-              type="button"
-              onClick={() => removeItem(item.cartItemId)}
-            >
+            <button type="button" onClick={() => removeItem(item.cartItemId)}>
               Remove
             </button>
           </article>
@@ -147,15 +126,15 @@ function CartPage() {
         {appliedPromotion ? (
           <>
             <p>
-              <strong>{appliedPromotion.code}</strong> —{' '}
+              <strong>{appliedPromotion.code}</strong> —{" "}
               {appliedPromotion.description}
             </p>
 
             <button
               type="button"
               onClick={() => {
-                removePromotion()
-                setPromotionMessage('')
+                removePromotion();
+                setPromotionMessage("");
               }}
             >
               Remove promotion
@@ -180,13 +159,9 @@ function CartPage() {
           </form>
         )}
 
-        {promotionMessage && (
-          <p role="status">{promotionMessage}</p>
-        )}
+        {promotionMessage && <p role="status">{promotionMessage}</p>}
 
-        {promotionError && (
-          <p role="alert">{promotionError}</p>
-        )}
+        {promotionError && <p role="alert">{promotionError}</p>}
       </section>
 
       <section className="cart-summary">
@@ -221,7 +196,7 @@ function CartPage() {
         <Link to="/checkout">Continue to checkout</Link>
       </section>
     </section>
-  )
+  );
 }
 
-export default CartPage
+export default CartPage;

@@ -1,34 +1,33 @@
 // Menu page: groups active products and sends selected items to the cart.
-import { useEffect, useState } from 'react'
-import { getMenu } from '../services/menuService.js'
-import { formatCurrency } from '../utils/pricing'
-import { Link } from 'react-router-dom'
-import { useCart } from '../context/CartContext'
-import FloatingNotification from '../components/FloatingNotification'
-import { useFloatingNotification } from '../hooks/useFloatingNotification'
+import { useEffect, useState } from "react";
+import { getMenu } from "../services/menuService.js";
+import { formatCurrency } from "../utils/pricing";
+import { Link } from "react-router-dom";
+import { useCart } from "../context/CartContext";
+import FloatingNotification from "../components/FloatingNotification";
+import { useFloatingNotification } from "../hooks/useFloatingNotification";
 
 function MenuPage() {
-  const [categories, setCategories] = useState([])
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const { addItem } = useCart()
-  const { notification, showNotification } =
-    useFloatingNotification()
+  const [categories, setCategories] = useState([]);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const { addItem } = useCart();
+  const { notification, showNotification } = useFloatingNotification();
 
   useEffect(() => {
     async function loadMenu() {
       try {
-        const menu = await getMenu()
-        setCategories(menu)
+        const menu = await getMenu();
+        setCategories(menu);
       } catch {
-        setError('The menu could not be loaded. Please try again later.')
+        setError("The menu could not be loaded. Please try again later.");
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    loadMenu()
-  }, [])
+    loadMenu();
+  }, []);
 
   function handleAddStandardItem(item, event) {
     addItem({
@@ -37,17 +36,17 @@ function MenuPage() {
       unitPriceCents: item.basePriceCents,
       quantity: 1,
       isCustomizable: false,
-    })
+    });
 
-    showNotification(`${item.name} added to cart.`, event)
+    showNotification(`${item.name} added to cart.`, event);
   }
 
   if (isLoading) {
-    return <p>Loading menu...</p>
+    return <p>Loading menu...</p>;
   }
 
   if (error) {
-    return <p role="alert">{error}</p>
+    return <p role="alert">{error}</p>;
   }
 
   return (
@@ -71,15 +70,11 @@ function MenuPage() {
                 </p>
 
                 {item.isCustomizable ? (
-                  <Link to={`/menu/${item.id}/customize`}>
-                    Customize
-                  </Link>
+                  <Link to={`/menu/${item.id}/customize`}>Customize</Link>
                 ) : (
                   <button
                     type="button"
-                    onClick={(event) =>
-                      handleAddStandardItem(item, event)
-                    }
+                    onClick={(event) => handleAddStandardItem(item, event)}
                   >
                     Add to cart
                   </button>
@@ -90,7 +85,7 @@ function MenuPage() {
         </section>
       ))}
     </section>
-  )
+  );
 }
 
-export default MenuPage
+export default MenuPage;

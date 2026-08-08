@@ -1,20 +1,22 @@
-// Demonstration checkout with pickup/delivery,
-// contact validation, delivery information,
-// simulated payment entry, and order confirmation.
+// Pickup-only demonstration checkout for guests and signed-in customers.
+// Full card numbers and security codes are validated locally and never stored.
 
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useCart } from '../context/CartContext'
-import { useAuth } from '../context/AuthContext'
-import { createOrder } from '../services/orderService'
-import {
-  calculateOrderTotals,
-  formatCurrency,
-} from '../utils/pricing'
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
+import { createOrder } from "../services/orderService";
+import { calculateOrderTotals, formatCurrency } from "../utils/pricing";
 import {
   NAME_MAX_LENGTH,
   PHONE_MAX_LENGTH,
-} from '../utils/contactValidation'
+  validateContactInformation,
+} from "../utils/contactValidation";
+import {
+  CARDHOLDER_NAME_MAX_LENGTH,
+  paymentMethodIsExpired,
+  validatePaymentInformation,
+} from "../utils/paymentValidation";
 
 function CheckoutPage() {
   const {
@@ -24,162 +26,127 @@ function CheckoutPage() {
     appliedPromotion,
     discountCents,
     clearCart,
-  } = useCart()
+  } = useCart();
 
-  const [customerName, setCustomerName] = useState('')
-  const [phone, setPhone] = useState('')
+  const { user, profile, paymentMethod, savePaymentMethod } = useAuth();
 
-  const [fulfillmentMethod, setFulfillmentMethod] =
-    useState('pickup')
-
-  const [streetAddress, setStreetAddress] = useState('')
-  const [city, setCity] = useState('')
-  const [state, setState] = useState('')
-  const [zipCode, setZipCode] = useState('')
-
-  const [cardName, setCardName] = useState('')
-  const [cardNumber, setCardNumber] = useState('')
-  const [expirationDate, setExpirationDate] = useState('')
-  const [cvv, setCvv] = useState('')
-  const { user, profile } = useAuth()
-
-  const [errors, setErrors] = useState({})
-  const [completedOrder, setCompletedOrder] = useState(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [orderError, setOrderError] = useState('')
+  const [paymentChoice, setPaymentChoice] = useState("new");
+  const [errors, setErrors] = useState({});
+  const [completedOrder, setCompletedOrder] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [orderError, setOrderError] = useState("");
+  const [saveWarning, setSaveWarning] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [expirationDate, setExpirationDate] = useState("");
 
   const { taxCents, totalCents } = calculateOrderTotals(
     subtotalCents,
     discountCents,
-  )
+  );
 
-  function validateForm() {
-    const validationErrors = {}
+  function handleCardNumberChange(event) {
+    const digits = event.target.value.replace(/\D/g, "").slice(0, 16);
+    setCardNumber(digits);
+  }
 
-    if (customerName.trim().length < 2) {
-      validationErrors.customerName =
-        'Enter your name.'
+  function handleExpirationDateChange(event) {
+    const digits = event.target.value.replace(/\D/g, "").slice(0, 4);
+
+    if (digits.length > 2) {
+      setExpirationDate(`${digits.slice(0, 2)}/${digits.slice(2)}`);
+    } else {
+      setExpirationDate(digits);
     }
-
-    if (!/^[0-9()+\-\s]{7,20}$/.test(phone.trim())) {
-      validationErrors.phone =
-        'Enter a valid phone number.'
-    }
-
-    if (fulfillmentMethod === 'delivery') {
-      if (streetAddress.trim().length < 5) {
-        validationErrors.streetAddress =
-          'Enter a valid street address.'
-      }
-
-      if (city.trim().length < 2) {
-        validationErrors.city =
-          'Enter a valid city.'
-      }
-
-      if (!/^[A-Za-z]{2}$/.test(state.trim())) {
-        validationErrors.state =
-          'Enter a 2-letter state abbreviation.'
-      }
-
-      if (!/^\d{5}(-\d{4})?$/.test(zipCode.trim())) {
-        validationErrors.zipCode =
-          'Enter a valid ZIP code.'
-      }
-    }
-
-    if (cardName.trim().length < 2) {
-      validationErrors.cardName =
-        'Enter the name shown on the demo card.'
-    }
-
-    const cardDigits =
-      cardNumber.replace(/\s/g, '')
-
-    if (!/^\d{16}$/.test(cardDigits)) {
-      validationErrors.cardNumber =
-        'Enter a 16-digit demo card number.'
-    }
-
-    if (
-      !/^(0[1-9]|1[0-2])\/\d{2}$/.test(
-        expirationDate.trim(),
-      )
-    ) {
-      validationErrors.expirationDate =
-        'Enter an expiration date in MM/YY format.'
-    }
-
-    if (!/^\d{3,4}$/.test(cvv.trim())) {
-      validationErrors.cvv =
-        'Enter a 3 or 4 digit demo CVV.'
-    }
-    
-    setErrors(validationErrors)
-
-    return Object.keys(validationErrors).length === 0
-    }
+  }
 
   async function handleSubmit(event) {
-    event.preventDefault()
-    setOrderError('')
-    
-    if (!validateForm()) {
-    return
-  }
+    event.preventDefault();
+    setOrderError("");
+    setSaveWarning("");
 
-  if (!user) {
-    setOrderError(
-      'Please log in before placing an order.',
-    )
-    return
-  }
+    const formData = new FormData(event.currentTarget);
+    const contactValidation = validateContactInformation({
+      fullName: formData.get("fullName")?.toString() ?? "",
+      phone: formData.get("phone")?.toString() ?? "",
+    });
 
-    setSubmitting(true)
+    const useSavedPaymentMethod =
+      paymentChoice === "saved" && Boolean(paymentMethod);
+
+    const savedPaymentMethodExpired =
+      useSavedPaymentMethod && paymentMethodIsExpired(paymentMethod);
+
+    const paymentValidation = useSavedPaymentMethod
+      ? {
+        isValid: !savedPaymentMethodExpired,
+        errors: savedPaymentMethodExpired
+          ? {
+            paymentChoice: "The saved demonstration card is expired.",
+          }
+          : {},
+        metadata: paymentMethod,
+      }
+      : validatePaymentInformation({
+        cardholderName: formData.get("cardholderName")?.toString() ?? "",
+        cardNumber: formData.get("cardNumber")?.toString() ?? "",
+        expirationDate: formData.get("expirationDate")?.toString() ?? "",
+        securityCode: formData.get("securityCode")?.toString() ?? "",
+      });
+
+    setErrors({
+      ...contactValidation.errors,
+      ...paymentValidation.errors,
+    });
+
+    if (!contactValidation.isValid || !paymentValidation.isValid) {
+      return;
+    }
+
+    setSubmitting(true);
 
     const { order, error } = await createOrder({
-      user,
       items,
       itemCount,
       subtotalCents,
       discountCents,
       taxCents,
       totalCents,
-      promotionCode:
-        appliedPromotion?.code ?? null,
-      fulfillmentMethod,
-      customerName,
-      phone,
-      streetAddress,
-      city,
-      state,
-      zipCode,
-    })
+      promotionCode: appliedPromotion?.code ?? null,
+      customerName: contactValidation.values.fullName,
+      phone: contactValidation.values.phone,
+      paymentMethod: paymentValidation.metadata,
+    });
 
     if (error) {
-      setOrderError(
-        `Unable to place order: ${error.message}`,
-      )
-      setSubmitting(false)
-      return
+      setOrderError(`Unable to place order: ${error.message}`);
+      setSubmitting(false);
+      return;
+    }
+
+    const shouldSaveCard =
+      user && !useSavedPaymentMethod && formData.get("saveCard") === "yes";
+
+    if (shouldSaveCard) {
+      const { error: saveError } = await savePaymentMethod(
+        paymentValidation.metadata,
+      );
+
+      if (saveError) {
+        setSaveWarning(
+          `The order was placed, but the card could not be saved: ${saveError.message}`,
+        );
+      }
     }
 
     setCompletedOrder({
       orderId: order.id,
       itemCount,
       totalCents,
-      fulfillmentMethod,
-    })
+      paymentMethod: paymentValidation.metadata,
+    });
 
-    clearCart()
-    setSubmitting(false)
-
-    // Clear simulated payment data from component state
-    // after the order has been successfully created.
-    setCardName('')
-    setCardNumber('')
-    setExpirationDate('')
-    setCvv('')
+    clearCart();
+    setSubmitting(false);
   }
 
   if (completedOrder) {
@@ -188,469 +155,269 @@ function CheckoutPage() {
         <h2>Test Order Confirmed</h2>
 
         <p role="status">
-          Your demonstration order for{' '}
-          {completedOrder.itemCount}{' '}
-          {completedOrder.itemCount === 1
-            ? 'item'
-            : 'items'}{' '}
-          was successfully created.
+          Your demonstration order for {completedOrder.itemCount}{" "}
+          {completedOrder.itemCount === 1 ? "item" : "items"} was successfully
+          created.
         </p>
 
         <p>
-          <strong>Order ID:</strong>{' '}
-          {completedOrder.orderId}
+          <strong>Order ID:</strong> {completedOrder.orderId}
         </p>
 
         <p>
-          <strong>
-            Demonstration total:{' '}
-            {formatCurrency(
-              completedOrder.totalCents,
-            )}
-          </strong>
+          <strong>Demonstration total:</strong>{" "}
+          {formatCurrency(completedOrder.totalCents)}
         </p>
 
         <p>
-          <strong>Fulfillment method:</strong>{' '}
-          {completedOrder.fulfillmentMethod ===
-          'delivery'
-            ? 'Delivery'
-            : 'In-Store Pickup'}
+          <strong>Fulfillment method:</strong> In-Store Pickup
         </p>
 
         <p>
-          <strong>Payment:</strong>{' '}
-          Demonstration card validation completed
+          <strong>Payment:</strong> {completedOrder.paymentMethod.cardBrand}{" "}
+          ending in {completedOrder.paymentMethod.lastFour}
         </p>
 
         <p>
-          No real payment was processed. Card number,
-          expiration date, and CVV were not stored with
-          the order.
+          No real payment was processed. The full card number and security code
+          were not transmitted to Supabase or stored.
         </p>
 
-        <Link to="/account">
-          View My Account
-        </Link>
+        {saveWarning && <p role="alert">{saveWarning}</p>}
 
-        {' | '}
+        {user && (
+          <>
+            <Link to="/account">View My Account</Link>
+            {" | "}
+          </>
+        )}
 
-        <Link to="/menu">
-          Return to menu
-        </Link>
+        <Link to="/menu">Return to menu</Link>
       </section>
-    )
+    );
   }
 
   if (items.length === 0) {
     return (
       <section>
         <h2>Checkout</h2>
-
         <p>Your cart is empty.</p>
-
-        <Link to="/menu">
-          Browse the menu
-        </Link>
+        <Link to="/menu">Browse the menu</Link>
       </section>
-    )
+    );
   }
+
+  const hasSavedPaymentMethod = Boolean(user && paymentMethod);
+  const useSavedPaymentMethod =
+    paymentChoice === "saved" && hasSavedPaymentMethod;
 
   return (
     <section className="checkout-page">
       <h2>Checkout</h2>
 
       <p role="note">
-        <strong>
-          School project demonstration:
-        </strong>{' '}
-        No real payment is processed. Use demonstration
-        information only. Do not enter real or sensitive
-        payment information.
+        <strong>School project demonstration:</strong> No real payment is
+        processed. Use demonstration information only.
       </p>
 
-<form
-  key={
-    profile?.updated_at ??
-    user?.id ??
-    'guest-checkout'
-  }
-  onSubmit={handleSubmit}
-  noValidate
->
-  <fieldset>
-    <legend>Fulfillment Method</legend>
+      {!user && (
+        <p>
+          You are checking out as a guest. You may place this order without
+          creating an account, but it will not appear in an account order
+          history.
+        </p>
+      )}
 
-    <label>
-      <input
-        type="radio"
-        name="fulfillment-method"
-        value="pickup"
-        checked={fulfillmentMethod === 'pickup'}
-        onChange={(event) =>
-          setFulfillmentMethod(event.target.value)
-        }
-      />
-      In-Store Pickup
-    </label>
-
-    <label>
-      <input
-        type="radio"
-        name="fulfillment-method"
-        value="delivery"
-        checked={fulfillmentMethod === 'delivery'}
-        onChange={(event) =>
-          setFulfillmentMethod(event.target.value)
-        }
-      />
-      Delivery
-    </label>
-  </fieldset>
+      <form
+        key={profile?.updated_at ?? user?.id ?? "guest-checkout"}
+        onSubmit={handleSubmit}
+        noValidate
+      >
+        <section className="pickup-notice">
+          <h3>Pickup Order</h3>
+          <p>All online orders are picked up at the restaurant.</p>
+        </section>
 
         <fieldset>
           <legend>Contact Information</legend>
 
-          <label htmlFor="customer-name">
-            Name
-          </label>
-
+          <label htmlFor="customer-name">Name</label>
           <input
             id="customer-name"
             name="fullName"
             type="text"
-            defaultValue={profile?.full_name ?? ''}
+            defaultValue={profile?.full_name ?? ""}
             maxLength={NAME_MAX_LENGTH}
             autoComplete="name"
+            aria-invalid={Boolean(errors.fullName)}
             aria-describedby={
-              errors.customerName
-                ? 'customer-name-error'
-                : undefined
-            }
-            aria-invalid={Boolean(
-              errors.customerName,
-            )}
-            onChange={(event) =>
-              setCustomerName(
-                event.target.value,
-              )
+              errors.fullName ? "customer-name-error" : undefined
             }
           />
 
-          {errors.customerName && (
-            <p
-              id="customer-name-error"
-              role="alert"
-            >
-              {errors.customerName}
+          {errors.fullName && (
+            <p id="customer-name-error" role="alert">
+              {errors.fullName}
             </p>
           )}
 
-          <label htmlFor="phone">
-            Phone
-          </label>
-
+          <label htmlFor="phone">Phone</label>
           <input
             id="phone"
             name="phone"
             type="tel"
-            value={phone}
+            defaultValue={profile?.phone ?? ""}
             maxLength={PHONE_MAX_LENGTH}
             autoComplete="tel"
-            aria-describedby={
-              errors.phone
-                ? 'phone-error'
-                : undefined
-            }
             aria-invalid={Boolean(errors.phone)}
-            onChange={(event) =>
-              setPhone(event.target.value)
-            }
+            aria-describedby={errors.phone ? "phone-error" : undefined}
           />
 
           {errors.phone && (
-            <p
-              id="phone-error"
-              role="alert"
-            >
+            <p id="phone-error" role="alert">
               {errors.phone}
             </p>
           )}
         </fieldset>
 
-        {fulfillmentMethod === 'delivery' && (
-          <fieldset>
-            <legend>Delivery Address</legend>
-
-            <label htmlFor="street-address">
-              Street Address
-            </label>
-
-            <input
-              id="street-address"
-              type="text"
-              value={streetAddress}
-              maxLength="150"
-              aria-invalid={Boolean(
-                errors.streetAddress,
-              )}
-              onChange={(event) =>
-                setStreetAddress(
-                  event.target.value,
-                )
-              }
-            />
-
-            {errors.streetAddress && (
-              <p role="alert">
-                {errors.streetAddress}
-              </p>
-            )}
-
-            <label htmlFor="city">
-              City
-            </label>
-
-            <input
-              id="city"
-              type="text"
-              value={city}
-              maxLength="100"
-              aria-invalid={Boolean(errors.city)}
-              onChange={(event) =>
-                setCity(event.target.value)
-              }
-            />
-
-            {errors.city && (
-              <p role="alert">
-                {errors.city}
-              </p>
-            )}
-
-            <label htmlFor="state">
-              State
-            </label>
-
-            <input
-              id="state"
-              type="text"
-              value={state}
-              maxLength="2"
-              aria-invalid={Boolean(errors.state)}
-              onChange={(event) =>
-                setState(
-                  event.target.value.toUpperCase(),
-                )
-              }
-            />
-
-            {errors.state && (
-              <p role="alert">
-                {errors.state}
-              </p>
-            )}
-
-            <label htmlFor="zip-code">
-              ZIP Code
-            </label>
-
-            <input
-              id="zip-code"
-              type="text"
-              inputMode="numeric"
-              value={zipCode}
-              maxLength="10"
-              aria-invalid={Boolean(
-                errors.zipCode,
-              )}
-              onChange={(event) =>
-                setZipCode(
-                  event.target.value,
-                )
-              }
-            />
-
-            {errors.zipCode && (
-              <p role="alert">
-                {errors.zipCode}
-              </p>
-            )}
-          </fieldset>
-        )}
-
         <fieldset>
-          <legend>
-            Demo Payment Information
-          </legend>
+          <legend>Demo Payment Information</legend>
 
           <p>
-            Use demonstration information only.
-            Payment fields are validated locally and
-            are not sent to Supabase or stored with
-            your order.
+            Full card numbers and security codes are checked only in this
+            browser and are never saved.
           </p>
 
-          <label htmlFor="card-name">
-            Name on Card
-          </label>
+          {hasSavedPaymentMethod && (
+            <>
+              <label>
+                <input
+                  type="radio"
+                  name="payment-choice"
+                  value="saved"
+                  checked={paymentChoice === "saved"}
+                  onChange={() => setPaymentChoice("saved")}
+                />
+                Use saved {paymentMethod.cardBrand} ending in{" "}
+                {paymentMethod.lastFour}
+              </label>
 
-          <input
-            id="card-name"
-            type="text"
-            value={cardName}
-            maxLength="100"
-            autoComplete="off"
-            aria-invalid={Boolean(errors.cardName)}
-            onChange={(event) =>
-              setCardName(event.target.value)
-            }
-          />
-
-          {errors.cardName && (
-            <p role="alert">
-              {errors.cardName}
-            </p>
+              <label>
+                <input
+                  type="radio"
+                  name="payment-choice"
+                  value="new"
+                  checked={paymentChoice === "new"}
+                  onChange={() => setPaymentChoice("new")}
+                />
+                Enter a new demonstration card
+              </label>
+            </>
           )}
 
-          <label htmlFor="card-number">
-            Card Number
-          </label>
+          {errors.paymentChoice && <p role="alert">{errors.paymentChoice}</p>}
 
-          <input
-            id="card-number"
-            type="text"
-            inputMode="numeric"
-            value={cardNumber}
-            maxLength="19"
-            autoComplete="off"
-            placeholder="4242 4242 4242 4242"
-            aria-invalid={Boolean(
-              errors.cardNumber,
-            )}
-            onChange={(event) =>
-              setCardNumber(event.target.value)
-            }
-          />
+          {!useSavedPaymentMethod && (
+            <>
+              <label htmlFor="cardholder-name">Name on Card</label>
+              <input
+                id="cardholder-name"
+                name="cardholderName"
+                type="text"
+                defaultValue={profile?.full_name ?? ""}
+                maxLength={CARDHOLDER_NAME_MAX_LENGTH}
+                autoComplete="off"
+                aria-invalid={Boolean(errors.cardholderName)}
+              />
 
-          {errors.cardNumber && (
-            <p role="alert">
-              {errors.cardNumber}
-            </p>
-          )}
+              {errors.cardholderName && (
+                <p role="alert">{errors.cardholderName}</p>
+              )}
 
-          <label htmlFor="expiration-date">
-            Expiration Date
-          </label>
+              <label htmlFor="card-number">Card Number</label>
+              <input
+                id="card-number"
+                name="cardNumber"
+                type="text"
+                inputMode="numeric"
+                value={cardNumber}
+                maxLength="16"
+                autoComplete="off"
+                placeholder="4242424242424242"
+                aria-invalid={Boolean(errors.cardNumber)}
+                onChange={handleCardNumberChange}
+              />
 
-          <input
-            id="expiration-date"
-            type="text"
-            inputMode="numeric"
-            value={expirationDate}
-            maxLength="5"
-            autoComplete="off"
-            placeholder="MM/YY"
-            aria-invalid={Boolean(
-              errors.expirationDate,
-            )}
-            onChange={(event) =>
-              setExpirationDate(
-                event.target.value,
-              )
-            }
-          />
+              {errors.cardNumber && <p role="alert">{errors.cardNumber}</p>}
 
-          {errors.expirationDate && (
-            <p role="alert">
-              {errors.expirationDate}
-            </p>
-          )}
+              <label htmlFor="expiration-date">Expiration Date</label>
+              <input
+                id="expiration-date"
+                name="expirationDate"
+                type="text"
+                inputMode="numeric"
+                value={expirationDate}
+                maxLength="5"
+                autoComplete="off"
+                placeholder="MM/YY"
+                aria-invalid={Boolean(errors.expirationDate)}
+                onChange={handleExpirationDateChange}
+              />
 
-          <label htmlFor="cvv">
-            CVV
-          </label>
+              {errors.expirationDate && (
+                <p role="alert">{errors.expirationDate}</p>
+              )}
 
-          <input
-            id="cvv"
-            type="password"
-            inputMode="numeric"
-            value={cvv}
-            maxLength="4"
-            autoComplete="off"
-            placeholder="123"
-            aria-invalid={Boolean(errors.cvv)}
-            onChange={(event) =>
-              setCvv(event.target.value)
-            }
-          />
+              <label htmlFor="security-code">Security Code</label>
+              <input
+                id="security-code"
+                name="securityCode"
+                type="password"
+                inputMode="numeric"
+                maxLength="4"
+                autoComplete="off"
+                placeholder="123"
+                aria-invalid={Boolean(errors.securityCode)}
+              />
 
-          {errors.cvv && (
-            <p role="alert">
-              {errors.cvv}
-            </p>
+              {errors.securityCode && <p role="alert">{errors.securityCode}</p>}
+
+              {user && (
+                <label>
+                  <input type="checkbox" name="saveCard" value="yes" />
+                  Save this card to my account
+                </label>
+              )}
+            </>
           )}
         </fieldset>
 
         <section className="checkout-summary">
           <h3>Order Summary</h3>
+          <p>Items: {itemCount}</p>
+          <p>Subtotal: {formatCurrency(subtotalCents)}</p>
 
+          {appliedPromotion && discountCents > 0 && (
+            <>
+              <p>Promotion: {appliedPromotion.code}</p>
+              <p>Discount: −{formatCurrency(discountCents)}</p>
+            </>
+          )}
+
+          <p>Estimated tax: {formatCurrency(taxCents)}</p>
           <p>
-            Items: {itemCount}
-          </p>
-
-          <p>
-            Subtotal:{' '}
-            {formatCurrency(subtotalCents)}
-          </p>
-
-          {appliedPromotion &&
-            discountCents > 0 && (
-              <>
-                <p>
-                  Promotion:{' '}
-                  {appliedPromotion.code}
-                </p>
-
-                <p>
-                  Discount: −
-                  {formatCurrency(
-                    discountCents,
-                  )}
-                </p>
-              </>
-            )}
-
-          <p>
-            Estimated tax:{' '}
-            {formatCurrency(taxCents)}
-          </p>
-
-          <p>
-            <strong>
-              Total:{' '}
-              {formatCurrency(totalCents)}
-            </strong>
+            <strong>Total: {formatCurrency(totalCents)}</strong>
           </p>
         </section>
 
-        {orderError && (
-          <p role="alert">
-            {orderError}
-          </p>
-        )}
+        {orderError && <p role="alert">{orderError}</p>}
 
-        <button
-          type="submit"
-          disabled={submitting}
-        >
-          {submitting
-            ? 'Placing order...'
-            : 'Place test order'}
+        <button type="submit" disabled={submitting}>
+          {submitting ? "Placing order..." : "Place test order"}
         </button>
       </form>
     </section>
-  )
+  );
 }
 
-export default CheckoutPage
+export default CheckoutPage;
