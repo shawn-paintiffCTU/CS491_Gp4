@@ -99,12 +99,17 @@ export async function getAdminMenuItems() {
 // is available to customers.
 export async function updateMenuItemAvailability(menuItemId, isAvailable) {
   const { data, error } = await supabase
-    .from("menu_item_availability")
-    .update({
-      is_available: isAvailable,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("menu_item_id", menuItemId)
+    .from('menu_item_availability')
+    .upsert(
+      {
+        menu_item_id: menuItemId,
+        is_available: isAvailable,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: 'menu_item_id',
+      },
+    )
     .select();
 
   if (error) {

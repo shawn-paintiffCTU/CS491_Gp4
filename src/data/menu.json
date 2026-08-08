@@ -40,7 +40,10 @@
       "description": "Mozzarella cheese and pepperoni over house-made sauce.",
       "basePriceCents": 1299,
       "isCustomizable": true,
-      "includedToppingIds": [1, 2],
+      "includedToppingIds": [
+        1,
+        2
+      ],
       "isActive": true
     },
     {
@@ -50,7 +53,86 @@
       "description": "Mushrooms, onions, green peppers, olives, and tomatoes.",
       "basePriceCents": 1399,
       "isCustomizable": true,
-      "includedToppingIds": [3, 4, 5, 6, 7],
+      "includedToppingIds": [
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "isActive": true
+    },
+    {
+      "id": 8,
+      "categoryId": 1,
+      "name": "Meat Lovers",
+      "description": "Pepperoni, Italian sausage, bacon, and mozzarella.",
+      "basePriceCents": 1599,
+      "isCustomizable": true,
+      "includedToppingIds": [
+        1,
+        2,
+        8,
+        9
+      ],
+      "isActive": true
+    },
+    {
+      "id": 9,
+      "categoryId": 1,
+      "name": "BBQ Chicken",
+      "description": "Grilled chicken, onions, mozzarella, and barbecue sauce.",
+      "basePriceCents": 1549,
+      "isCustomizable": true,
+      "includedToppingIds": [
+        1,
+        4,
+        11,
+        15
+      ],
+      "isActive": true
+    },
+    {
+      "id": 10,
+      "categoryId": 1,
+      "name": "Buffalo Chicken",
+      "description": "Grilled chicken, onions, mozzarella, and buffalo sauce.",
+      "basePriceCents": 1549,
+      "isCustomizable": true,
+      "includedToppingIds": [
+        1,
+        4,
+        11,
+        16
+      ],
+      "isActive": true
+    },
+    {
+      "id": 11,
+      "categoryId": 1,
+      "name": "Hawaiian",
+      "description": "Ham, pineapple, and mozzarella over house-made sauce.",
+      "basePriceCents": 1449,
+      "isCustomizable": true,
+      "includedToppingIds": [
+        1,
+        12,
+        13
+      ],
+      "isActive": true
+    },
+    {
+      "id": 12,
+      "categoryId": 1,
+      "name": "Margherita",
+      "description": "Mozzarella, tomatoes, and fresh basil.",
+      "basePriceCents": 1399,
+      "isCustomizable": true,
+      "includedToppingIds": [
+        1,
+        7,
+        14
+      ],
       "isActive": true
     },
     {
@@ -203,6 +285,48 @@
       "name": "Extra Cheese",
       "category": "Cheese",
       "priceCents": 125,
+      "isActive": true
+    },
+    {
+      "id": 11,
+      "name": "Grilled Chicken",
+      "category": "Meat",
+      "priceCents": 175,
+      "isActive": true
+    },
+    {
+      "id": 12,
+      "name": "Ham",
+      "category": "Meat",
+      "priceCents": 150,
+      "isActive": true
+    },
+    {
+      "id": 13,
+      "name": "Pineapple",
+      "category": "Fruit",
+      "priceCents": 100,
+      "isActive": true
+    },
+    {
+      "id": 14,
+      "name": "Fresh Basil",
+      "category": "Herb",
+      "priceCents": 75,
+      "isActive": true
+    },
+    {
+      "id": 15,
+      "name": "Barbecue Sauce",
+      "category": "Sauce",
+      "priceCents": 75,
+      "isActive": true
+    },
+    {
+      "id": 16,
+      "name": "Buffalo Sauce",
+      "category": "Sauce",
+      "priceCents": 75,
       "isActive": true
     }
   ]
