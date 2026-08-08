@@ -1,10 +1,15 @@
-// Shared frame shown around every page: header, navigation, content, and footer.
+// Shared frame shown around every page:
+// header, navigation, content, and footer.
+
 import { useEffect, useState } from 'react'
-import { Link, Outlet, useNavigate } from 'react-router-dom'
+import {
+  Link,
+  Outlet,
+  useNavigate,
+} from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { getUserProfile } from '../services/profileService'
-
 
 function Layout() {
   const { itemCount } = useCart()
@@ -18,34 +23,37 @@ function Layout() {
       return
     }
 
-    async function loadUserProfile() {
-      const { role: loadedRole } = await getUserProfile(user.id)
-      const normalizedRole = loadedRole?.trim().toLowerCase()
-      setRole(normalizedRole)
+    async function loadUserRole() {
+      const {
+        role: loadedRole,
+        error,
+      } = await getUserProfile(user.id)
+
+      if (error) {
+        console.error(
+          'Unable to load user role:',
+          error.message,
+        )
+        setRole(null)
+        return
+      }
+
+      setRole(
+        loadedRole?.trim().toLowerCase() ?? null,
+      )
     }
 
-    loadUserProfile()
+    loadUserRole()
   }, [user])
-
-  useEffect(() => {
-  if (!user) {
-    setRole(null)
-    return
-  }
-
-  async function loadRole() {
-    const { role: loadedRole } = await getUserProfile(user.id)
-    setRole(loadedRole?.trim().toLowerCase() ?? null)
-  }
-
-  loadRole()
-}, [user])
 
   async function handleLogout() {
     const { error } = await logout()
 
     if (error) {
-      console.error('Logout failed:', error.message)
+      console.error(
+        'Logout failed:',
+        error.message,
+      )
       return
     }
 
@@ -59,28 +67,56 @@ function Layout() {
 
         <nav aria-label="Primary navigation">
           <Link to="/">Home</Link>
-          <Link to="/menu">Menu</Link>
-          <Link to="/cart">
-            Cart{itemCount > 0 ? ` (${itemCount})` : ''}
+
+          <Link to="/menu">
+            Menu
           </Link>
-          <Link to="/checkout">Checkout</Link>
+
+          <Link to="/cart">
+            Cart
+            {itemCount > 0
+              ? ` (${itemCount})`
+              : ''}
+          </Link>
+
+          <Link to="/checkout">
+            Checkout
+          </Link>
 
           {user ? (
-  <>
-    <Link to="/account">My Account</Link>
-
-    {role === 'admin' && (
-      <Link to="/admin/orders">Admin Orders</Link>
-    )}
-
-    <button type="button" onClick={handleLogout}>
-      Logout
-    </button>
-  </>
-) : (
             <>
-              <Link to="/login">Login</Link>
-              <Link to="/register">Register</Link>
+              <Link to="/account">
+                My Account
+              </Link>
+
+              {role === 'admin' && (
+                <>
+                  <Link to="/admin/orders">
+                    Admin Orders
+                  </Link>
+
+                  <Link to="/admin/menu">
+                    Admin Menu
+                  </Link>
+                </>
+              )}
+
+              <button
+                type="button"
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login">
+                Login
+              </Link>
+
+              <Link to="/register">
+                Register
+              </Link>
             </>
           )}
         </nav>
@@ -91,7 +127,10 @@ function Layout() {
       </main>
 
       <footer>
-        <p>2026 Plethora of PIES!: CTU CS491 Group4 Demonstration</p>
+        <p>
+          2026 Plethora of PIES!: CTU CS491
+          Group4 Demonstration
+        </p>
       </footer>
     </>
   )
