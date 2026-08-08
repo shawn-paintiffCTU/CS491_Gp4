@@ -48,7 +48,7 @@ function RegisterPage() {
   }
 
   return (
-    <main className="auth-page">
+    <section className="auth-page">
       <h1>Create Account</h1>
 
       <form className="auth-form" onSubmit={handleSubmit}>
@@ -95,7 +95,7 @@ function RegisterPage() {
       <p>
         Already have an account? <Link to="/login">Login</Link>
       </p>
-    </main>
+    </section>
   );
 }
 
