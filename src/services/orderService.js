@@ -9,6 +9,11 @@ export async function createOrder({
   taxCents,
   totalCents,
   promotionCode,
+  fulfillmentMethod,
+  streetAddress,
+  city,
+  state,
+  zipCode,
 }) {
   if (!user) {
     return {
@@ -16,7 +21,6 @@ export async function createOrder({
     }
   }
 
-  // Create the order
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
@@ -27,15 +31,34 @@ export async function createOrder({
       tax_cents: taxCents,
       total_cents: totalCents,
       promotion_code: promotionCode ?? null,
+      fulfillment_method: fulfillmentMethod,
+      delivery_street:
+        fulfillmentMethod === 'delivery'
+          ? streetAddress.trim()
+          : null,
+      delivery_city:
+        fulfillmentMethod === 'delivery'
+          ? city.trim()
+          : null,
+      delivery_state:
+        fulfillmentMethod === 'delivery'
+          ? state.trim().toUpperCase()
+          : null,
+      delivery_zip:
+        fulfillmentMethod === 'delivery'
+          ? zipCode.trim()
+          : null,
     })
     .select()
     .single()
 
   if (orderError) {
-    return { error: orderError }
+    return {
+      order: null,
+      error: orderError,
+    }
   }
 
-  // Create the order items
   const orderItems = items.map((item) => ({
     order_id: order.id,
     menu_item_id: String(item.menuItemId),
@@ -52,7 +75,10 @@ export async function createOrder({
     .insert(orderItems)
 
   if (itemError) {
-    return { error: itemError }
+    return {
+      order,
+      error: itemError,
+    }
   }
 
   return {
@@ -81,6 +107,10 @@ export async function getUserOrders(userId) {
       total_cents,
       promotion_code,
       fulfillment_method,
+      delivery_street,
+      delivery_city,
+      delivery_state,
+      delivery_zip,
       created_at,
       order_items (
         id,
@@ -102,7 +132,7 @@ export async function getUserOrders(userId) {
 }
 
 export async function getAllOrders() {
-  const { data, error } = await supabase
+  const { data: orders, error: ordersError } = await supabase
     .from('orders')
     .select(`
       id,
@@ -115,6 +145,10 @@ export async function getAllOrders() {
       total_cents,
       promotion_code,
       fulfillment_method,
+      delivery_street,
+      delivery_city,
+      delivery_state,
+      delivery_zip,
       created_at,
       order_items (
         id,
@@ -128,13 +162,64 @@ export async function getAllOrders() {
     `)
     .order('created_at', { ascending: false })
 
+  if (ordersError) {
+    return {
+      orders: [],
+      error: ordersError,
+    }
+  }
+
+  const userIds = [
+    ...new Set(
+      orders
+        .map((order) => order.user_id)
+        .filter(Boolean),
+    ),
+  ]
+
+  if (userIds.length === 0) {
+    return {
+      orders,
+      error: null,
+    }
+  }
+
+  const { data: profiles, error: profilesError } =
+    await supabase
+      .from('profiles')
+      .select('id, full_name, phone')
+      .in('id', userIds)
+
+  if (profilesError) {
+    return {
+      orders: [],
+      error: profilesError,
+    }
+  }
+
+  const profileMap = new Map(
+    profiles.map((profile) => [
+      profile.id,
+      profile,
+    ]),
+  )
+
+  const ordersWithCustomers = orders.map((order) => ({
+    ...order,
+    customer:
+      profileMap.get(order.user_id) ?? null,
+  }))
+
   return {
-    orders: data ?? [],
-    error,
+    orders: ordersWithCustomers,
+    error: null,
   }
 }
 
-export async function updateOrderStatus(orderId, status) {
+export async function updateOrderStatus(
+  orderId,
+  status,
+) {
   const allowedStatuses = [
     'placed',
     'preparing',

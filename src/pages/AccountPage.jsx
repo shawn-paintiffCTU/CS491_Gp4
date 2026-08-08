@@ -244,6 +244,12 @@ function AccountPage() {
     {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
   </span>
 </p>
+<p>
+  <strong>Fulfillment:</strong>{' '}
+  {order.fulfillment_method === 'delivery'
+    ? 'Delivery'
+    : 'In-Store Pickup'}
+</p>
 
           <p>
             <strong>Total:</strong> $

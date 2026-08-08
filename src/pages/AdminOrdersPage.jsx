@@ -40,15 +40,16 @@ function AdminOrdersPage() {
         )
       }
 
-      const normalizedRole = loadedRole?.trim().toLowerCase()
+      const normalizedRole =
+        loadedRole?.trim().toLowerCase() ?? null
 
-setRole(normalizedRole)
-setRoleLoading(false)
+      setRole(normalizedRole)
+      setRoleLoading(false)
 
-if (normalizedRole !== 'admin') {
-  setOrdersLoading(false)
-  return
-}
+      if (normalizedRole !== 'admin') {
+        setOrdersLoading(false)
+        return
+      }
 
       const {
         orders: loadedOrders,
@@ -68,6 +69,37 @@ if (normalizedRole !== 'admin') {
     loadAdminData()
   }, [user])
 
+  async function handleStatusChange(orderId, newStatus) {
+    setUpdatingOrderId(orderId)
+    setErrorMessage('')
+
+    const {
+      order: updatedOrder,
+      error,
+    } = await updateOrderStatus(orderId, newStatus)
+
+    if (error) {
+      setErrorMessage(
+        `Unable to update order: ${error.message}`,
+      )
+      setUpdatingOrderId(null)
+      return
+    }
+
+    setOrders((currentOrders) =>
+      currentOrders.map((order) =>
+        order.id === orderId
+          ? {
+              ...order,
+              status: updatedOrder.status,
+            }
+          : order,
+      ),
+    )
+
+    setUpdatingOrderId(null)
+  }
+
   if (authLoading || roleLoading) {
     return (
       <section>
@@ -82,59 +114,21 @@ if (normalizedRole !== 'admin') {
   }
 
   if (role !== 'admin') {
-  return (
-    <section>
-      <h2>Admin Debug</h2>
-
-      <p>
-        User Email: {user?.email}
-      </p>
-
-      <p>
-        Role: "{String(role)}"
-      </p>
-
-      <p>
-        You are not authorized to access the admin dashboard.
-      </p>
-    </section>
-  )
-}
-
-async function handleStatusChange(orderId, newStatus) {
-  setUpdatingOrderId(orderId)
-  setErrorMessage('')
-
-  const { order: updatedOrder, error } =
-    await updateOrderStatus(orderId, newStatus)
-
-  if (error) {
-    setErrorMessage(
-      `Unable to update order: ${error.message}`,
-    )
-    setUpdatingOrderId(null)
-    return
+    return <Navigate to="/account" replace />
   }
 
-  setOrders((currentOrders) =>
-    currentOrders.map((order) =>
-      order.id === orderId
-        ? {
-            ...order,
-            status: updatedOrder.status,
-          }
-        : order,
-    ),
-  )
-
-  setUpdatingOrderId(null)
-}
   return (
-    <section>
+    <section className="admin-orders-page">
       <h2>Admin Order Dashboard</h2>
 
+      <p>
+        Review customer orders and update their current status.
+      </p>
+
       {errorMessage && (
-        <p role="alert">{errorMessage}</p>
+        <p role="alert">
+          {errorMessage}
+        </p>
       )}
 
       {ordersLoading ? (
@@ -142,96 +136,197 @@ async function handleStatusChange(orderId, newStatus) {
       ) : orders.length === 0 ? (
         <p>No customer orders have been placed yet.</p>
       ) : (
-        <div>
+        <div className="admin-order-list">
           {orders.map((order) => (
-            <article key={order.id} className="order-card">
+            <article
+              key={order.id}
+              className="order-card"
+            >
               <h3>Order #{order.id}</h3>
 
-              <p>
-                <strong>Status:</strong>{' '}
-                <span
-                  className={`order-status order-status-${order.status}`}
-                >
-                  {order.status.charAt(0).toUpperCase() +
-                    order.status.slice(1)}
-                </span>
-              </p>
+              <section className="admin-customer-details">
+                <h4>Customer Information</h4>
 
-              <div className="admin-order-actions">
-  <button
-    type="button"
-    disabled={
-      updatingOrderId === order.id ||
-      order.status === 'preparing'
-    }
-    onClick={() =>
-      handleStatusChange(order.id, 'preparing')
-    }
-  >
-    Preparing
-  </button>
+                <p>
+                  <strong>Customer:</strong>{' '}
+                  {order.customer?.full_name ||
+                    'Name not provided'}
+                </p>
 
-  <button
-    type="button"
-    disabled={
-      updatingOrderId === order.id ||
-      order.status === 'ready'
-    }
-    onClick={() =>
-      handleStatusChange(order.id, 'ready')
-    }
-  >
-    Ready
-  </button>
+                <p>
+                  <strong>Phone:</strong>{' '}
+                  {order.customer?.phone ||
+                    'Phone not provided'}
+                </p>
+              </section>
 
-  <button
-    type="button"
-    disabled={
-      updatingOrderId === order.id ||
-      order.status === 'completed'
-    }
-    onClick={() =>
-      handleStatusChange(order.id, 'completed')
-    }
-  >
-    Completed
-  </button>
+              <section className="admin-fulfillment-details">
+                <h4>Fulfillment</h4>
 
-  <button
-    type="button"
-    disabled={
-      updatingOrderId === order.id ||
-      order.status === 'cancelled'
-    }
-    onClick={() =>
-      handleStatusChange(order.id, 'cancelled')
-    }
-  >
-    Cancel
-  </button>
-</div>
+                <p>
+                  <strong>Method:</strong>{' '}
+                  {order.fulfillment_method === 'delivery'
+                    ? 'Delivery'
+                    : 'In-Store Pickup'}
+                </p>
 
-              <p>
-                <strong>Date:</strong>{' '}
-                {new Date(order.created_at).toLocaleString()}
-              </p>
+                {order.fulfillment_method === 'delivery' && (
+                  <p>
+                    <strong>Delivery Address:</strong>{' '}
+                    {order.delivery_street ||
+                      'Street not provided'}
+                    ,{' '}
+                    {order.delivery_city ||
+                      'City not provided'}
+                    ,{' '}
+                    {order.delivery_state ||
+                      'State not provided'}{' '}
+                    {order.delivery_zip ||
+                      'ZIP not provided'}
+                  </p>
+                )}
+              </section>
 
-              <p>
-                <strong>Items:</strong> {order.item_count}
-              </p>
+              <section className="admin-status-details">
+                <h4>Order Status</h4>
 
-              <ul>
-                {order.order_items?.map((item) => (
-                  <li key={item.id}>
-                    {item.quantity} × {item.item_name}
-                  </li>
-                ))}
-              </ul>
+                <p>
+                  <strong>Status:</strong>{' '}
+                  <span
+                    className={
+                      `order-status order-status-${order.status}`
+                    }
+                  >
+                    {order.status.charAt(0).toUpperCase() +
+                      order.status.slice(1)}
+                  </span>
+                </p>
 
-              <p>
-                <strong>Total:</strong>{' '}
-                ${(order.total_cents / 100).toFixed(2)}
-              </p>
+                <div className="admin-order-actions">
+                  <button
+                    type="button"
+                    disabled={
+                      updatingOrderId === order.id ||
+                      order.status === 'preparing'
+                    }
+                    onClick={() =>
+                      handleStatusChange(
+                        order.id,
+                        'preparing',
+                      )
+                    }
+                  >
+                    Preparing
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={
+                      updatingOrderId === order.id ||
+                      order.status === 'ready'
+                    }
+                    onClick={() =>
+                      handleStatusChange(
+                        order.id,
+                        'ready',
+                      )
+                    }
+                  >
+                    Ready
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={
+                      updatingOrderId === order.id ||
+                      order.status === 'completed'
+                    }
+                    onClick={() =>
+                      handleStatusChange(
+                        order.id,
+                        'completed',
+                      )
+                    }
+                  >
+                    Completed
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={
+                      updatingOrderId === order.id ||
+                      order.status === 'cancelled'
+                    }
+                    onClick={() =>
+                      handleStatusChange(
+                        order.id,
+                        'cancelled',
+                      )
+                    }
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </section>
+
+              <section className="admin-order-details">
+                <h4>Order Details</h4>
+
+                <p>
+                  <strong>Date:</strong>{' '}
+                  {new Date(
+                    order.created_at,
+                  ).toLocaleString()}
+                </p>
+
+                <p>
+                  <strong>Items:</strong>{' '}
+                  {order.item_count}
+                </p>
+
+                <ul>
+                  {order.order_items?.map((item) => (
+                    <li key={item.id}>
+                      <strong>
+                        {item.quantity} × {item.item_name}
+                      </strong>
+
+                      {item.size_name && (
+                        <span>
+                          {' '}
+                          — {item.size_name}
+                        </span>
+                      )}
+
+                      {item.crust_name && (
+                        <span>
+                          , {item.crust_name}
+                        </span>
+                      )}
+
+                      {Array.isArray(item.toppings) &&
+                        item.toppings.length > 0 && (
+                          <div>
+                            Toppings:{' '}
+                            {item.toppings
+                              .map(
+                                (topping) =>
+                                  topping.name ??
+                                  topping,
+                              )
+                              .join(', ')}
+                          </div>
+                        )}
+                    </li>
+                  ))}
+                </ul>
+
+                <p>
+                  <strong>Total:</strong>{' '}
+                  $
+                  {(order.total_cents / 100).toFixed(2)}
+                </p>
+              </section>
             </article>
           ))}
         </div>

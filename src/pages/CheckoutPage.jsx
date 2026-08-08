@@ -4,10 +4,7 @@ import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { createOrder } from '../services/orderService'
-import {
-  calculateOrderTotals,
-  formatCurrency,
-} from '../utils/pricing'
+import {calculateOrderTotals, formatCurrency,} from '../utils/pricing'
 
 function CheckoutPage() {
   const {
@@ -20,18 +17,18 @@ function CheckoutPage() {
   } = useCart()
 
   const { user } = useAuth()
-
   const [customerName, setCustomerName] = useState('')
   const [phone, setPhone] = useState('')
   const [errors, setErrors] = useState({})
   const [completedOrder, setCompletedOrder] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [orderError, setOrderError] = useState('')
-
-  const { taxCents, totalCents } = calculateOrderTotals(
-    subtotalCents,
-    discountCents,
-  )
+  const [fulfillmentMethod, setFulfillmentMethod] = useState('pickup')
+  const [streetAddress, setStreetAddress] = useState('')
+  const [city, setCity] = useState('')
+  const [state, setState] = useState('')
+  const [zipCode, setZipCode] = useState('')
+  const { taxCents, totalCents } = calculateOrderTotals(subtotalCents,  discountCents,)
 
   // Client-side checks provide immediate feedback before submission.
   function validateForm() {
@@ -44,6 +41,27 @@ function CheckoutPage() {
     if (!/^[0-9()+\-\s]{7,20}$/.test(phone.trim())) {
       validationErrors.phone = 'Enter a valid phone number.'
     }
+
+    if (fulfillmentMethod === 'delivery') {
+  if (streetAddress.trim().length < 5) {
+    validationErrors.streetAddress =
+      'Enter a valid street address.'
+  }
+
+  if (city.trim().length < 2) {
+    validationErrors.city = 'Enter a valid city.'
+  }
+
+  if (!/^[A-Za-z]{2}$/.test(state.trim())) {
+    validationErrors.state =
+      'Enter a 2-letter state abbreviation.'
+  }
+
+  if (!/^\d{5}(-\d{4})?$/.test(zipCode.trim())) {
+    validationErrors.zipCode =
+      'Enter a valid ZIP code.'
+  }
+}
 
     setErrors(validationErrors)
 
@@ -74,6 +92,11 @@ function CheckoutPage() {
       taxCents,
       totalCents,
       promotionCode: appliedPromotion?.code ?? null,
+      fulfillmentMethod,
+      streetAddress,
+      city,
+      state,
+      zipCode,
     })
 
     if (error) {
@@ -115,8 +138,11 @@ function CheckoutPage() {
         </p>
 
         <p>
-          <strong>Fulfillment method:</strong> Pickup
-        </p>
+  <strong>Fulfillment method:</strong>{' '}
+  {fulfillmentMethod === 'delivery'
+    ? 'Delivery'
+    : 'In-Store Pickup'}
+</p>
 
         <p>
           No payment was processed. The demonstration order was saved
@@ -150,12 +176,35 @@ function CheckoutPage() {
       </p>
 
       <form onSubmit={handleSubmit} noValidate>
-        <section className="pickup-notice">
-          <h3>Pickup Order</h3>
-          <p>
-            All online orders must be picked up at the restaurant.
-          </p>
-        </section>
+        <fieldset>
+  <legend>Fulfillment Method</legend>
+
+  <label>
+    <input
+      type="radio"
+      name="fulfillment-method"
+      value="pickup"
+      checked={fulfillmentMethod === 'pickup'}
+      onChange={(event) =>
+        setFulfillmentMethod(event.target.value)
+      }
+    />
+    In-Store Pickup
+  </label>
+
+  <label>
+    <input
+      type="radio"
+      name="fulfillment-method"
+      value="delivery"
+      checked={fulfillmentMethod === 'delivery'}
+      onChange={(event) =>
+        setFulfillmentMethod(event.target.value)
+      }
+    />
+    Delivery
+  </label>
+</fieldset>
 
         <fieldset>
           <legend>Contact information</legend>
@@ -196,6 +245,80 @@ function CheckoutPage() {
             </p>
           )}
         </fieldset>
+
+        {fulfillmentMethod === 'delivery' && (
+  <fieldset>
+    <legend>Delivery Address</legend>
+
+    <label htmlFor="street-address">Street Address</label>
+<input
+  id="street-address"
+  type="text"
+  value={streetAddress}
+  maxLength="150"
+  onChange={(event) =>
+    setStreetAddress(event.target.value)
+  }
+/>
+
+{errors.streetAddress && (
+  <p role="alert">
+    {errors.streetAddress}
+  </p>
+)}
+
+    <label htmlFor="city">City</label>
+<input
+  id="city"
+  type="text"
+  value={city}
+  maxLength="100"
+  onChange={(event) =>
+    setCity(event.target.value)
+  }
+/>
+
+{errors.city && (
+  <p role="alert">
+    {errors.city}
+  </p>
+)}
+
+    <label htmlFor="state">State</label>
+<input
+  id="state"
+  type="text"
+  value={state}
+  maxLength="2"
+  onChange={(event) =>
+    setState(event.target.value.toUpperCase())
+  }
+/>
+
+{errors.state && (
+  <p role="alert">
+    {errors.state}
+  </p>
+)}
+
+    <label htmlFor="zip-code">ZIP Code</label>
+<input
+  id="zip-code"
+  type="text"
+  value={zipCode}
+  maxLength="10"
+  onChange={(event) =>
+    setZipCode(event.target.value)
+  }
+/>
+
+{errors.zipCode && (
+  <p role="alert">
+    {errors.zipCode}
+  </p>
+)}
+  </fieldset>
+)}
 
         <section>
           <h3>Order Summary</h3>
