@@ -149,13 +149,15 @@ function AdminOrdersPage() {
 
                 <p>
                   <strong>Customer:</strong>{' '}
-                  {order.customer?.full_name ||
+                  {order.customer_name ||
+                    order.customer?.full_name ||
                     'Name not provided'}
                 </p>
 
                 <p>
                   <strong>Phone:</strong>{' '}
-                  {order.customer?.phone ||
+                  {order.customer_phone ||
+                    order.customer?.phone ||
                     'Phone not provided'}
                 </p>
               </section>
@@ -321,10 +323,23 @@ function AdminOrdersPage() {
                   ))}
                 </ul>
 
+                {order.promotion_code && (
+                  <p>
+                    <strong>Promotion:</strong>{' '}
+                    {order.promotion_code}
+                  </p>
+                )}
+
+                {order.discount_cents > 0 && (
+                  <p>
+                    <strong>Discount:</strong> −$
+                    {(order.discount_cents / 100).toFixed(2)}
+                  </p>
+                )}
+
                 <p>
                   <strong>Total:</strong>{' '}
-                  $
-                  {(order.total_cents / 100).toFixed(2)}
+                  ${(order.total_cents / 100).toFixed(2)}
                 </p>
               </section>
             </article>

@@ -93,6 +93,8 @@ function CheckoutPage() {
       totalCents,
       promotionCode: appliedPromotion?.code ?? null,
       fulfillmentMethod,
+      customerName,
+      phone,
       streetAddress,
       city,
       state,

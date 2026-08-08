@@ -10,6 +10,8 @@ export async function createOrder({
   totalCents,
   promotionCode,
   fulfillmentMethod,
+  customerName,
+  phone,
   streetAddress,
   city,
   state,
@@ -17,6 +19,7 @@ export async function createOrder({
 }) {
   if (!user) {
     return {
+      order: null,
       error: new Error('User must be logged in.'),
     }
   }
@@ -32,6 +35,8 @@ export async function createOrder({
       total_cents: totalCents,
       promotion_code: promotionCode ?? null,
       fulfillment_method: fulfillmentMethod,
+      customer_name: customerName.trim(),
+      customer_phone: phone.trim(),
       delivery_street:
         fulfillmentMethod === 'delivery'
           ? streetAddress.trim()
@@ -107,6 +112,8 @@ export async function getUserOrders(userId) {
       total_cents,
       promotion_code,
       fulfillment_method,
+      customer_name,
+      customer_phone,
       delivery_street,
       delivery_city,
       delivery_state,
@@ -145,6 +152,8 @@ export async function getAllOrders() {
       total_cents,
       promotion_code,
       fulfillment_method,
+      customer_name,
+      customer_phone,
       delivery_street,
       delivery_city,
       delivery_state,
@@ -206,6 +215,8 @@ export async function getAllOrders() {
 
   const ordersWithCustomers = orders.map((order) => ({
     ...order,
+
+    // Keep profile data available as a fallback for older orders.
     customer:
       profileMap.get(order.user_id) ?? null,
   }))
