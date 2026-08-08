@@ -53,13 +53,22 @@ function CartPage() {
   }
 
   return (
-    <section>
-      <h2>Your Cart</h2>
+    <section className="cart-page">
+      <div className="cart-page-header">
+        <h2>Your Cart</h2>
+
+        <p className="cart-header-total">
+          Total: <strong>{formatCurrency(totalCents)}</strong>
+        </p>
+      </div>
 
       <div className="cart-items">
         {items.map((item) => (
-          <article key={item.cartItemId} className="cart-item">
-            <div>
+          <article
+            key={item.cartItemId}
+            className="cart-item"
+          >
+            <div className="cart-item-details">
               <h3>{item.name}</h3>
 
               {item.isCustomizable && (
@@ -68,133 +77,179 @@ function CartPage() {
                     {item.size.name} · {item.crust.name}
                   </p>
 
-                  <p>
-                    <strong>Toppings:</strong>{" "}
+                  <p className="cart-toppings">
+                    <strong>Toppings:</strong>{' '}
                     {item.toppings.length > 0
-                      ? item.toppings.map((topping) => topping.name).join(", ")
-                      : "None"}
+                      ? item.toppings
+                        .map(
+                          (topping) => topping.name,
+                        )
+                        .join(', ')
+                      : 'None'}
                   </p>
                 </>
               )}
 
-              <p>{formatCurrency(item.unitPriceCents)} each</p>
+              <p>
+                {formatCurrency(item.unitPriceCents)} each
+              </p>
             </div>
 
-            <div className="quantity-controls">
+            <div className="cart-item-actions">
+              <div className="quantity-controls">
+                <button
+                  type="button"
+                  aria-label={`Decrease quantity of ${item.name}`}
+                  disabled={item.quantity === 1}
+                  onClick={() =>
+                    updateQuantity(
+                      item.cartItemId,
+                      item.quantity - 1,
+                    )
+                  }
+                >
+                  −
+                </button>
+
+                <span
+                  aria-label={`Quantity: ${item.quantity}`}
+                >
+                  {item.quantity}
+                </span>
+
+                <button
+                  type="button"
+                  aria-label={`Increase quantity of ${item.name}`}
+                  onClick={() =>
+                    updateQuantity(
+                      item.cartItemId,
+                      item.quantity + 1,
+                    )
+                  }
+                >
+                  +
+                </button>
+              </div>
+
+              <p className="cart-line-total">
+                <strong>
+                  {formatCurrency(
+                    item.unitPriceCents *
+                    item.quantity,
+                  )}
+                </strong>
+              </p>
+
               <button
                 type="button"
-                aria-label={`Decrease quantity of ${item.name}`}
-                disabled={item.quantity === 1}
+                className="cart-remove-button"
                 onClick={() =>
-                  updateQuantity(item.cartItemId, item.quantity - 1)
+                  removeItem(item.cartItemId)
                 }
               >
-                −
-              </button>
-
-              <span aria-label={`Quantity: ${item.quantity}`}>
-                {item.quantity}
-              </span>
-
-              <button
-                type="button"
-                aria-label={`Increase quantity of ${item.name}`}
-                onClick={() =>
-                  updateQuantity(item.cartItemId, item.quantity + 1)
-                }
-              >
-                +
+                Remove
               </button>
             </div>
-
-            <p>
-              <strong>
-                {formatCurrency(item.unitPriceCents * item.quantity)}
-              </strong>
-            </p>
-
-            <button type="button" onClick={() => removeItem(item.cartItemId)}>
-              Remove
-            </button>
           </article>
         ))}
       </div>
 
-      <section className="promotion-section">
-        <h3>Promotion Code</h3>
+      <div className="cart-bottom-grid">
+        <section className="promotion-section">
+          <h3>Promotion Code</h3>
 
-        {appliedPromotion ? (
-          <>
-            <p>
-              <strong>{appliedPromotion.code}</strong> —{" "}
-              {appliedPromotion.description}
-            </p>
+          {appliedPromotion ? (
+            <>
+              <p>
+                <strong>
+                  {appliedPromotion.code}
+                </strong>{' '}
+                — {appliedPromotion.description}
+              </p>
 
-            <button
-              type="button"
-              onClick={() => {
-                removePromotion();
-                setPromotionMessage("");
-              }}
-            >
-              Remove promotion
-            </button>
-          </>
-        ) : (
-          <form onSubmit={handlePromotionSubmit}>
-            <label htmlFor="promotion-code">Promotion code</label>
+              <button
+                type="button"
+                onClick={() => {
+                  removePromotion()
+                  setPromotionMessage('')
+                }}
+              >
+                Remove Promotion
+              </button>
+            </>
+          ) : (
+            <form onSubmit={handlePromotionSubmit}>
+              <label htmlFor="promotion-code">
+                Promotion code
+              </label>
 
-            <input
-              id="promotion-code"
-              type="text"
-              value={promotionCode}
-              maxLength="30"
-              autoComplete="off"
-              onChange={(event) =>
-                setPromotionCode(event.target.value.toUpperCase())
-              }
-            />
+              <input
+                id="promotion-code"
+                type="text"
+                value={promotionCode}
+                maxLength="30"
+                autoComplete="off"
+                onChange={(event) =>
+                  setPromotionCode(
+                    event.target.value.toUpperCase(),
+                  )
+                }
+              />
 
-            <button type="submit">Apply</button>
-          </form>
-        )}
-
-        {promotionMessage && <p role="status">{promotionMessage}</p>}
-
-        {promotionError && <p role="alert">{promotionError}</p>}
-      </section>
-
-      <section className="cart-summary">
-        <h3>Order Summary</h3>
-
-        <dl>
-          <div>
-            <dt>Subtotal</dt>
-            <dd>{formatCurrency(subtotalCents)}</dd>
-          </div>
-
-          {discountCents > 0 && (
-            <div>
-              <dt>Promotion discount</dt>
-              <dd>−{formatCurrency(discountCents)}</dd>
-            </div>
+              <button type="submit">Apply</button>
+            </form>
           )}
 
-          <div>
-            <dt>Estimated tax</dt>
-            <dd>{formatCurrency(taxCents)}</dd>
-          </div>
+          {promotionMessage && (
+            <p role="status">{promotionMessage}</p>
+          )}
 
-          <div>
-            <dt>Total</dt>
-            <dd>
-              <strong>{formatCurrency(totalCents)}</strong>
-            </dd>
-          </div>
-        </dl>
+          {promotionError && (
+            <p role="alert">{promotionError}</p>
+          )}
+        </section>
 
-        <Link to="/checkout">Continue to checkout</Link>
-      </section>
+        <section className="cart-summary">
+          <h3>Order Summary</h3>
+
+          <dl>
+            <div>
+              <dt>Subtotal</dt>
+              <dd>{formatCurrency(subtotalCents)}</dd>
+            </div>
+
+            {discountCents > 0 && (
+              <div>
+                <dt>Promotion discount</dt>
+                <dd>
+                  −{formatCurrency(discountCents)}
+                </dd>
+              </div>
+            )}
+
+            <div>
+              <dt>Estimated tax</dt>
+              <dd>{formatCurrency(taxCents)}</dd>
+            </div>
+
+            <div className="cart-summary-total">
+              <dt>Total</dt>
+              <dd>
+                <strong>
+                  {formatCurrency(totalCents)}
+                </strong>
+              </dd>
+            </div>
+          </dl>
+
+          <Link
+            className="checkout-link"
+            to="/checkout"
+          >
+            Continue to Checkout
+          </Link>
+        </section>
+      </div>
     </section>
   );
 }

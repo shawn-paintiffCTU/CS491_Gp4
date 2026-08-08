@@ -28,45 +28,51 @@ function LoginPage() {
   }
 
   return (
-    <main>
+    <section className="auth-page">
       <h1>Login</h1>
 
-      <form onSubmit={handleSubmit}>
-        <div>
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <div className="auth-field">
           <label htmlFor="login-email">Email</label>
 
           <input
             id="login-email"
             type="email"
             value={email}
+            autoComplete="email"
             onChange={(event) => setEmail(event.target.value)}
             required
           />
         </div>
 
-        <div>
+        <div className="auth-field">
           <label htmlFor="login-password">Password</label>
 
           <input
             id="login-password"
             type="password"
             value={password}
+            autoComplete="current-password"
             onChange={(event) => setPassword(event.target.value)}
             required
           />
         </div>
 
         <button type="submit" disabled={submitting}>
-          {submitting ? "Logging in..." : "Login"}
+          {submitting ? 'Logging in...' : 'Login'}
         </button>
       </form>
 
-      {message && <p>{message}</p>}
+      {message && (
+        <p className="auth-message" role="alert">
+          {message}
+        </p>
+      )}
 
       <p>
         Do not have an account? <Link to="/register">Register</Link>
       </p>
-    </main>
+    </section>
   );
 }
 

@@ -109,7 +109,7 @@ function AccountPage() {
 
   if (authLoading) {
     return (
-      <section>
+      <section className="account-section">
         <h2>My Account</h2>
         <p>Loading account...</p>
       </section>
@@ -133,10 +133,11 @@ function AccountPage() {
 
         <form
           key={profile?.updated_at ?? "new-profile"}
+          className="account-profile-form"
           onSubmit={handleSubmit}
           noValidate
         >
-          <div>
+          <div className="account-field">
             <label htmlFor="account-email">Email</label>
 
             <input
@@ -147,7 +148,7 @@ function AccountPage() {
             />
           </div>
 
-          <div>
+          <div className="account-field">
             <label htmlFor="account-full-name">Full name</label>
 
             <input
@@ -172,7 +173,7 @@ function AccountPage() {
             )}
           </div>
 
-          <div>
+          <div className="account-field">
             <label htmlFor="account-phone">Phone</label>
 
             <input
@@ -201,17 +202,17 @@ function AccountPage() {
         </form>
       </section>
 
-      <section>
+      <section className="account-section">
         <h3>Account Details</h3>
 
         <dl>
           <div>
-            <dt>Role</dt>
+            <dt>Role:</dt>
             <dd>{role ?? "customer"}</dd>
           </div>
 
           <div>
-            <dt>Account created</dt>
+            <dt>Account created:</dt>
             <dd>
               {profile?.created_at
                 ? new Date(profile.created_at).toLocaleString()
@@ -221,7 +222,7 @@ function AccountPage() {
         </dl>
       </section>
 
-      <section>
+      <section className="account-section">
         <h3>Saved Payment Method</h3>
 
         {paymentMethod ? (
@@ -259,7 +260,7 @@ function AccountPage() {
         )}
       </section>
 
-      <section className="order-history">
+      <section className="account-section order-history">
         <h3>Recent Orders</h3>
 
         {ordersLoading ? (

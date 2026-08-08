@@ -124,7 +124,7 @@ function PizzaCustomizerPage() {
   }
 
   return (
-    <section>
+    <section className="pizza-customizer">
       <FloatingNotification notification={notification} />
 
       <Link to="/menu">← Back to menu</Link>
@@ -135,108 +135,181 @@ function PizzaCustomizerPage() {
       <fieldset>
         <legend>Choose a size</legend>
 
-        {sizes.map((size) => (
-          <label key={size.id}>
-            <input
-              type="radio"
-              name="pizza-size"
-              value={size.id}
-              checked={selectedSizeId === size.id}
-              onChange={() => setSelectedSizeId(size.id)}
-            />
+        <div className="customizer-option-grid">
+          {sizes.map((size) => (
+            <label
+              key={size.id}
+              className="customizer-option"
+            >
+              <input
+                type="radio"
+                name="pizza-size"
+                value={size.id}
+                checked={selectedSizeId === size.id}
+                onChange={() =>
+                  setSelectedSizeId(size.id)
+                }
+              />
 
-            {size.name}
+              <span>
+                {size.name}
 
-            {size.priceAdjustmentCents > 0 &&
-              ` (+${formatCurrency(size.priceAdjustmentCents)})`}
-          </label>
-        ))}
+                {size.priceAdjustmentCents > 0 &&
+                  ` (+${formatCurrency(
+                    size.priceAdjustmentCents,
+                  )})`}
+              </span>
+            </label>
+          ))}
+        </div>
       </fieldset>
 
       <fieldset>
         <legend>Choose a crust</legend>
 
-        {crusts.map((crust) => (
-          <label key={crust.id}>
-            <input
-              type="radio"
-              name="pizza-crust"
-              value={crust.id}
-              checked={selectedCrustId === crust.id}
-              onChange={() => setSelectedCrustId(crust.id)}
-            />
+        <div className="customizer-option-grid">
+          {crusts.map((crust) => (
+            <label
+              key={crust.id}
+              className="customizer-option"
+            >
+              <input
+                type="radio"
+                name="pizza-crust"
+                value={crust.id}
+                checked={
+                  selectedCrustId === crust.id
+                }
+                onChange={() =>
+                  setSelectedCrustId(crust.id)
+                }
+              />
 
-            {crust.name}
+              <span>
+                {crust.name}
 
-            {crust.priceAdjustmentCents > 0 &&
-              ` (+${formatCurrency(crust.priceAdjustmentCents)})`}
-          </label>
-        ))}
+                {crust.priceAdjustmentCents > 0 &&
+                  ` (+${formatCurrency(
+                    crust.priceAdjustmentCents,
+                  )})`}
+              </span>
+            </label>
+          ))}
+        </div>
       </fieldset>
 
       <fieldset>
         <legend>Choose toppings</legend>
 
-        {toppings.map((topping) => {
-          const isIncluded = pizza.includedToppingIds.includes(topping.id);
-
-          return (
-            <label key={topping.id}>
-              <input
-                type="checkbox"
-                checked={selectedToppingIds.includes(topping.id)}
-                onChange={() => toggleTopping(topping.id)}
-              />
-
-              {topping.name}
-
-              {isIncluded
-                ? " (included)"
-                : ` (+${formatCurrency(topping.priceCents)})`}
-            </label>
-          );
-        })}
-      </fieldset>
-
-      <fieldset>
-        <legend>Quantity</legend>
-
-        <label htmlFor="pizza-quantity">Number of pizzas</label>
-
-        <select
-          id="pizza-quantity"
-          value={quantity}
-          onChange={(event) => setQuantity(Number(event.target.value))}
-        >
-          {Array.from({ length: 10 }, (_, index) => {
-            const optionQuantity = index + 1;
+        <div className="customizer-option-grid customizer-toppings">
+          {toppings.map((topping) => {
+            const isIncluded =
+              pizza.includedToppingIds.includes(
+                topping.id,
+              )
 
             return (
-              <option key={optionQuantity} value={optionQuantity}>
-                {optionQuantity}
-              </option>
-            );
+              <label
+                key={topping.id}
+                className="customizer-option"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedToppingIds.includes(
+                    topping.id,
+                  )}
+                  onChange={() =>
+                    toggleTopping(topping.id)
+                  }
+                />
+
+                <span>
+                  {topping.name}
+
+                  {isIncluded
+                    ? ' (included)'
+                    : ` (+${formatCurrency(
+                      topping.priceCents,
+                    )})`}
+                </span>
+              </label>
+            )
           })}
-        </select>
+        </div>
       </fieldset>
 
-      <section aria-live="polite">
+      <fieldset className="customizer-quantity">
+        <legend>Quantity</legend>
+
+        <div className="customizer-quantity-row">
+          <label htmlFor="pizza-quantity">
+            Number of pizzas
+          </label>
+
+          <select
+            id="pizza-quantity"
+            value={quantity}
+            onChange={(event) =>
+              setQuantity(
+                Number(event.target.value),
+              )
+            }
+          >
+            {Array.from(
+              { length: 10 },
+              (_, index) => {
+                const optionQuantity = index + 1
+
+                return (
+                  <option
+                    key={optionQuantity}
+                    value={optionQuantity}
+                  >
+                    {optionQuantity}
+                  </option>
+                )
+              },
+            )}
+          </select>
+        </div>
+      </fieldset>
+
+      <section
+        className="customizer-summary"
+        aria-live="polite"
+      >
         <h3>Customization Summary</h3>
-        <p>Price per pizza: {formatCurrency(totalPriceCents)}</p>
-        <p>Quantity: {quantity}</p>
-        <p>
-          <strong>
-            Item total: {formatCurrency(totalPriceCents * quantity)}
-          </strong>
-        </p>
+
+        <div className="customizer-summary-values">
+          <p>
+            Price each:{' '}
+            <strong>
+              {formatCurrency(totalPriceCents)}
+            </strong>
+          </p>
+
+          <p>
+            Quantity: <strong>{quantity}</strong>
+          </p>
+
+          <p>
+            Total:{' '}
+            <strong>
+              {formatCurrency(
+                totalPriceCents * quantity,
+              )}
+            </strong>
+          </p>
+        </div>
       </section>
 
       <button
         type="button"
+        className="customizer-add-button"
         disabled={!selectedSize || !selectedCrust}
         onClick={handleAddToCart}
       >
-        Add to cart
+        Add to Cart
       </button>
     </section>
   );

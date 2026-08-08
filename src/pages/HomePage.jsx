@@ -92,7 +92,7 @@ function HomePage() {
       <section>
         <h2>Restaurant Hours</h2>
 
-        <ul>
+        <ul className="restaurant-hours">
           {restaurant.hours.map((schedule) => (
             <li key={schedule.days}>
               <strong>{schedule.days}:</strong> {schedule.time}
