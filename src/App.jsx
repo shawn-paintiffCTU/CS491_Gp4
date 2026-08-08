@@ -14,6 +14,9 @@ import CheckoutPage from './pages/CheckoutPage'
 import PizzaCustomizerPage from './pages/PizzaCustomizerPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import AccountPage from './pages/AccountPage'
+import AdminOrdersPage from './pages/AdminOrdersPage'
+import AdminMenuPage from './pages/AdminMenuPage'
 import AdminPage from './pages/AdminPage'
 import ProfilePage from './pages/ProfilePage'
 
@@ -45,6 +48,15 @@ function App() {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route
+            path="/admin/orders"
+            element={<AdminOrdersPage />}
+          />
+          <Route
+            path="/admin/menu"
+            element={<AdminMenuPage />}
+          />
         </Route>
       </Routes>
     </Router>

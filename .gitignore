@@ -26,3 +26,5 @@ dist-ssr
 # Applications (for submission only)
 release/
 *.exe
+.env
+.env.*

@@ -267,3 +267,60 @@ fieldset select {
     flex-direction: column;
   }
 }
+
+.order-history {
+  margin-top: 2rem;
+}
+
+.order-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.order-card h4 {
+  margin-top: 0;
+}
+
+.order-card ul {
+  padding-left: 1.25rem;
+}
+
+.order-card li {
+  margin-bottom: 0.5rem;
+}
+
+.order-status {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+
+.order-status-placed {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.order-status-preparing {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.order-status-ready {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.order-status-completed {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.order-status-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
