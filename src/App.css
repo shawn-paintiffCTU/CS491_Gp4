@@ -64,10 +64,19 @@ fieldset label {
   gap: 0.5rem;
 }
 
-fieldset input[type='text'],
-fieldset input[type='tel'],
+fieldset input[type="text"],
+fieldset input[type="tel"],
+fieldset input[type="email"],
+fieldset input[type="password"],
+fieldset input[type="number"],
+fieldset textarea,
 fieldset select {
   width: min(100%, 28rem);
+}
+
+fieldset textarea {
+  min-height: 6rem;
+  resize: vertical;
 }
 
 .menu-category,
@@ -104,8 +113,13 @@ fieldset select {
 
 .menu-card h4,
 .special-card h3,
+.special-card h4,
 .pickup-notice h3 {
   margin-top: 0;
+}
+
+.special-card button + button {
+  margin-left: 0.5rem;
 }
 
 /* Cart and checkout */

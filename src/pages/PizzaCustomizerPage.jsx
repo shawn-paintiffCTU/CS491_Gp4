@@ -1,35 +1,28 @@
 // Pizza builder: selects options, calculates a live price, and adds the result.
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import {
-  getMenuItem,
-  getPizzaOptions,
-} from '../services/menuService.js'
-import {
-  calculatePizzaPrice,
-  formatCurrency,
-} from '../utils/pricing'
-import { useCart } from '../context/CartContext'
-import FloatingNotification from '../components/FloatingNotification'
-import { useFloatingNotification } from '../hooks/useFloatingNotification'
+import { useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { getMenuItem, getPizzaOptions } from "../services/menuService.js";
+import { calculatePizzaPrice, formatCurrency } from "../utils/pricing";
+import { useCart } from "../context/CartContext";
+import FloatingNotification from "../components/FloatingNotification";
+import { useFloatingNotification } from "../hooks/useFloatingNotification";
 
 function PizzaCustomizerPage() {
-  const { itemId } = useParams()
+  const { itemId } = useParams();
 
-  const { addItem } = useCart()
-  const { notification, showNotification } =
-    useFloatingNotification()
+  const { addItem } = useCart();
+  const { notification, showNotification } = useFloatingNotification();
 
-  const [pizza, setPizza] = useState(null)
-  const [sizes, setSizes] = useState([])
-  const [crusts, setCrusts] = useState([])
-  const [toppings, setToppings] = useState([])
-  const [selectedSizeId, setSelectedSizeId] = useState(null)
-  const [selectedCrustId, setSelectedCrustId] = useState(null)
-  const [selectedToppingIds, setSelectedToppingIds] = useState([])
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [quantity, setQuantity] = useState(1)
+  const [pizza, setPizza] = useState(null);
+  const [sizes, setSizes] = useState([]);
+  const [crusts, setCrusts] = useState([]);
+  const [toppings, setToppings] = useState([]);
+  const [selectedSizeId, setSelectedSizeId] = useState(null);
+  const [selectedCrustId, setSelectedCrustId] = useState(null);
+  const [selectedToppingIds, setSelectedToppingIds] = useState([]);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     async function loadCustomizer() {
@@ -37,51 +30,48 @@ function PizzaCustomizerPage() {
         const [menuItem, options] = await Promise.all([
           getMenuItem(itemId),
           getPizzaOptions(),
-        ])
+        ]);
 
         if (!menuItem || !menuItem.isCustomizable) {
-          setError('This pizza is not available for customization.')
-          return
+          setError("This pizza is not available for customization.");
+          return;
         }
 
-        setPizza(menuItem)
-        setSizes(options.sizes)
-        setCrusts(options.crusts)
-        setToppings(options.toppings)
-        setSelectedSizeId(options.sizes[0]?.id ?? null)
-        setSelectedCrustId(options.crusts[0]?.id ?? null)
-        setSelectedToppingIds(menuItem.includedToppingIds)
+        setPizza(menuItem);
+        setSizes(options.sizes);
+        setCrusts(options.crusts);
+        setToppings(options.toppings);
+        setSelectedSizeId(options.sizes[0]?.id ?? null);
+        setSelectedCrustId(options.crusts[0]?.id ?? null);
+        setSelectedToppingIds(menuItem.includedToppingIds);
       } catch {
-        setError('The pizza customizer could not be loaded.')
+        setError("The pizza customizer could not be loaded.");
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    loadCustomizer()
-  }, [itemId])
+    loadCustomizer();
+  }, [itemId]);
 
   const selectedSize = useMemo(
     () => sizes.find((size) => size.id === selectedSizeId),
     [sizes, selectedSizeId],
-  )
+  );
 
   const selectedCrust = useMemo(
     () => crusts.find((crust) => crust.id === selectedCrustId),
     [crusts, selectedCrustId],
-  )
+  );
 
   const selectedToppings = useMemo(
-    () =>
-      toppings.filter((topping) =>
-        selectedToppingIds.includes(topping.id),
-      ),
+    () => toppings.filter((topping) => selectedToppingIds.includes(topping.id)),
     [toppings, selectedToppingIds],
-  )
+  );
 
   const totalPriceCents = useMemo(() => {
     if (!pizza) {
-      return 0
+      return 0;
     }
 
     return calculatePizzaPrice({
@@ -90,20 +80,20 @@ function PizzaCustomizerPage() {
       crust: selectedCrust,
       toppings: selectedToppings,
       includedToppingIds: pizza.includedToppingIds,
-    })
-  }, [pizza, selectedSize, selectedCrust, selectedToppings])
+    });
+  }, [pizza, selectedSize, selectedCrust, selectedToppings]);
 
   function toggleTopping(toppingId) {
     setSelectedToppingIds((currentIds) =>
       currentIds.includes(toppingId)
         ? currentIds.filter((id) => id !== toppingId)
         : [...currentIds, toppingId],
-    )
+    );
   }
 
   function handleAddToCart(event) {
     if (!selectedSize || !selectedCrust) {
-      return
+      return;
     }
 
     addItem({
@@ -115,13 +105,13 @@ function PizzaCustomizerPage() {
       unitPriceCents: totalPriceCents,
       quantity,
       isCustomizable: true,
-    })
+    });
 
-    showNotification(`${pizza.name} added to cart.`, event)
+    showNotification(`${pizza.name} added to cart.`, event);
   }
 
   if (isLoading) {
-    return <p>Loading pizza customizer...</p>
+    return <p>Loading pizza customizer...</p>;
   }
 
   if (error) {
@@ -130,7 +120,7 @@ function PizzaCustomizerPage() {
         <p role="alert">{error}</p>
         <Link to="/menu">Return to menu</Link>
       </section>
-    )
+    );
   }
 
   return (
@@ -188,9 +178,7 @@ function PizzaCustomizerPage() {
         <legend>Choose toppings</legend>
 
         {toppings.map((topping) => {
-          const isIncluded = pizza.includedToppingIds.includes(
-            topping.id,
-          )
+          const isIncluded = pizza.includedToppingIds.includes(topping.id);
 
           return (
             <label key={topping.id}>
@@ -203,52 +191,42 @@ function PizzaCustomizerPage() {
               {topping.name}
 
               {isIncluded
-                ? ' (included)'
+                ? " (included)"
                 : ` (+${formatCurrency(topping.priceCents)})`}
             </label>
-          )
+          );
         })}
       </fieldset>
 
       <fieldset>
         <legend>Quantity</legend>
 
-        <label htmlFor="pizza-quantity">
-          Number of pizzas
-        </label>
+        <label htmlFor="pizza-quantity">Number of pizzas</label>
 
         <select
           id="pizza-quantity"
           value={quantity}
-          onChange={(event) =>
-            setQuantity(Number(event.target.value))
-          }
+          onChange={(event) => setQuantity(Number(event.target.value))}
         >
           {Array.from({ length: 10 }, (_, index) => {
-            const optionQuantity = index + 1
+            const optionQuantity = index + 1;
 
             return (
-              <option
-                key={optionQuantity}
-                value={optionQuantity}
-              >
+              <option key={optionQuantity} value={optionQuantity}>
                 {optionQuantity}
               </option>
-            )
+            );
           })}
         </select>
       </fieldset>
 
       <section aria-live="polite">
         <h3>Customization Summary</h3>
-        <p>
-          Price per pizza: {formatCurrency(totalPriceCents)}
-        </p>
+        <p>Price per pizza: {formatCurrency(totalPriceCents)}</p>
         <p>Quantity: {quantity}</p>
         <p>
           <strong>
-            Item total:{' '}
-            {formatCurrency(totalPriceCents * quantity)}
+            Item total: {formatCurrency(totalPriceCents * quantity)}
           </strong>
         </p>
       </section>
@@ -261,7 +239,7 @@ function PizzaCustomizerPage() {
         Add to cart
       </button>
     </section>
-  )
+  );
 }
 
-export default PizzaCustomizerPage
+export default PizzaCustomizerPage;

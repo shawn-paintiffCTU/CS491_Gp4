@@ -1,89 +1,60 @@
-import { useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { getUserProfile } from '../services/profileService'
-import {
-  getAllOrders,
-  updateOrderStatus,
-} from '../services/orderService'
+import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { getAllOrders, updateOrderStatus } from "../services/orderService";
 
 function AdminOrdersPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, isAdmin, loading: authLoading } = useAuth();
 
-  const [role, setRole] = useState(null)
-  const [roleLoading, setRoleLoading] = useState(true)
-  const [orders, setOrders] = useState([])
-  const [ordersLoading, setOrdersLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState('')
-  const [updatingOrderId, setUpdatingOrderId] = useState(null)
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
   useEffect(() => {
-    if (!user) {
-      setRoleLoading(false)
-      setOrdersLoading(false)
-      return
+    if (!user || !isAdmin) {
+      return undefined;
     }
 
-    async function loadAdminData() {
-      setRoleLoading(true)
-      setOrdersLoading(true)
-      setErrorMessage('')
+    let isActive = true;
 
-      const {
-        role: loadedRole,
-        error: roleError,
-      } = await getUserProfile(user.id)
+    async function loadOrders() {
+      const { orders: loadedOrders, error } = await getAllOrders();
 
-      if (roleError) {
-        setErrorMessage(
-          `Unable to verify admin access: ${roleError.message}`,
-        )
+      if (!isActive) {
+        return;
       }
 
-      const normalizedRole =
-        loadedRole?.trim().toLowerCase() ?? null
-
-      setRole(normalizedRole)
-      setRoleLoading(false)
-
-      if (normalizedRole !== 'admin') {
-        setOrdersLoading(false)
-        return
+      if (error) {
+        setErrorMessage(`Unable to load orders: ${error.message}`);
+        setOrders([]);
+      } else {
+        setOrders(loadedOrders);
       }
 
-      const {
-        orders: loadedOrders,
-        error: ordersError,
-      } = await getAllOrders()
-
-      if (ordersError) {
-        setErrorMessage(
-          `Unable to load orders: ${ordersError.message}`,
-        )
-      }
-
-      setOrders(loadedOrders)
-      setOrdersLoading(false)
+      setOrdersLoading(false);
     }
 
-    loadAdminData()
-  }, [user])
+    loadOrders();
+
+    return () => {
+      isActive = false;
+    };
+  }, [user, isAdmin]);
 
   async function handleStatusChange(orderId, newStatus) {
-    setUpdatingOrderId(orderId)
-    setErrorMessage('')
+    setUpdatingOrderId(orderId);
+    setErrorMessage("");
 
-    const {
-      order: updatedOrder,
-      error,
-    } = await updateOrderStatus(orderId, newStatus)
+    const { order: updatedOrder, error } = await updateOrderStatus(
+      orderId,
+      newStatus,
+    );
 
     if (error) {
-      setErrorMessage(
-        `Unable to update order: ${error.message}`,
-      )
-      setUpdatingOrderId(null)
-      return
+      setErrorMessage(`Unable to update order: ${error.message}`);
+      setUpdatingOrderId(null);
+      return;
     }
 
     setOrders((currentOrders) =>
@@ -95,41 +66,35 @@ function AdminOrdersPage() {
             }
           : order,
       ),
-    )
+    );
 
-    setUpdatingOrderId(null)
+    setUpdatingOrderId(null);
   }
 
-  if (authLoading || roleLoading) {
+  if (authLoading) {
     return (
       <section>
         <h2>Admin Order Dashboard</h2>
         <p>Checking access...</p>
       </section>
-    )
+    );
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace />;
   }
 
-  if (role !== 'admin') {
-    return <Navigate to="/account" replace />
+  if (!isAdmin) {
+    return <Navigate to="/account" replace />;
   }
 
   return (
     <section className="admin-orders-page">
       <h2>Admin Order Dashboard</h2>
 
-      <p>
-        Review customer orders and update their current status.
-      </p>
+      <p>Review customer orders and update their current status.</p>
 
-      {errorMessage && (
-        <p role="alert">
-          {errorMessage}
-        </p>
-      )}
+      {errorMessage && <p role="alert">{errorMessage}</p>}
 
       {ordersLoading ? (
         <p>Loading orders...</p>
@@ -138,27 +103,24 @@ function AdminOrdersPage() {
       ) : (
         <div className="admin-order-list">
           {orders.map((order) => (
-            <article
-              key={order.id}
-              className="order-card"
-            >
+            <article key={order.id} className="order-card">
               <h3>Order #{order.id}</h3>
 
               <section className="admin-customer-details">
                 <h4>Customer Information</h4>
 
                 <p>
-                  <strong>Customer:</strong>{' '}
+                  <strong>Customer:</strong>{" "}
                   {order.customer_name ||
                     order.customer?.full_name ||
-                    'Name not provided'}
+                    "Name not provided"}
                 </p>
 
                 <p>
-                  <strong>Phone:</strong>{' '}
+                  <strong>Phone:</strong>{" "}
                   {order.customer_phone ||
                     order.customer?.phone ||
-                    'Phone not provided'}
+                    "Phone not provided"}
                 </p>
               </section>
 
@@ -166,39 +128,26 @@ function AdminOrdersPage() {
                 <h4>Fulfillment</h4>
 
                 <p>
-                  <strong>Method:</strong>{' '}
-                  {order.fulfillment_method === 'delivery'
-                    ? 'Delivery'
-                    : 'In-Store Pickup'}
+                  <strong>Method:</strong> In-Store Pickup
                 </p>
 
-                {order.fulfillment_method === 'delivery' && (
-                  <p>
-                    <strong>Delivery Address:</strong>{' '}
-                    {order.delivery_street ||
-                      'Street not provided'}
-                    ,{' '}
-                    {order.delivery_city ||
-                      'City not provided'}
-                    ,{' '}
-                    {order.delivery_state ||
-                      'State not provided'}{' '}
-                    {order.delivery_zip ||
-                      'ZIP not provided'}
-                  </p>
-                )}
+                <p>
+                  <strong>Account:</strong>{" "}
+                  {order.user_id ? "Registered customer" : "Guest"}
+                </p>
+
+                <p>
+                  <strong>Payment:</strong> {order.payment_brand || "Card"}{" "}
+                  ending in {order.payment_last_four || "unknown"}
+                </p>
               </section>
 
               <section className="admin-status-details">
                 <h4>Order Status</h4>
 
                 <p>
-                  <strong>Status:</strong>{' '}
-                  <span
-                    className={
-                      `order-status order-status-${order.status}`
-                    }
-                  >
+                  <strong>Status:</strong>{" "}
+                  <span className={`order-status order-status-${order.status}`}>
                     {order.status.charAt(0).toUpperCase() +
                       order.status.slice(1)}
                   </span>
@@ -209,14 +158,9 @@ function AdminOrdersPage() {
                     type="button"
                     disabled={
                       updatingOrderId === order.id ||
-                      order.status === 'preparing'
+                      order.status === "preparing"
                     }
-                    onClick={() =>
-                      handleStatusChange(
-                        order.id,
-                        'preparing',
-                      )
-                    }
+                    onClick={() => handleStatusChange(order.id, "preparing")}
                   >
                     Preparing
                   </button>
@@ -224,15 +168,9 @@ function AdminOrdersPage() {
                   <button
                     type="button"
                     disabled={
-                      updatingOrderId === order.id ||
-                      order.status === 'ready'
+                      updatingOrderId === order.id || order.status === "ready"
                     }
-                    onClick={() =>
-                      handleStatusChange(
-                        order.id,
-                        'ready',
-                      )
-                    }
+                    onClick={() => handleStatusChange(order.id, "ready")}
                   >
                     Ready
                   </button>
@@ -241,14 +179,9 @@ function AdminOrdersPage() {
                     type="button"
                     disabled={
                       updatingOrderId === order.id ||
-                      order.status === 'completed'
+                      order.status === "completed"
                     }
-                    onClick={() =>
-                      handleStatusChange(
-                        order.id,
-                        'completed',
-                      )
-                    }
+                    onClick={() => handleStatusChange(order.id, "completed")}
                   >
                     Completed
                   </button>
@@ -257,14 +190,9 @@ function AdminOrdersPage() {
                     type="button"
                     disabled={
                       updatingOrderId === order.id ||
-                      order.status === 'cancelled'
+                      order.status === "cancelled"
                     }
-                    onClick={() =>
-                      handleStatusChange(
-                        order.id,
-                        'cancelled',
-                      )
-                    }
+                    onClick={() => handleStatusChange(order.id, "cancelled")}
                   >
                     Cancel
                   </button>
@@ -275,15 +203,12 @@ function AdminOrdersPage() {
                 <h4>Order Details</h4>
 
                 <p>
-                  <strong>Date:</strong>{' '}
-                  {new Date(
-                    order.created_at,
-                  ).toLocaleString()}
+                  <strong>Date:</strong>{" "}
+                  {new Date(order.created_at).toLocaleString()}
                 </p>
 
                 <p>
-                  <strong>Items:</strong>{' '}
-                  {order.item_count}
+                  <strong>Items:</strong> {order.item_count}
                 </p>
 
                 <ul>
@@ -293,30 +218,17 @@ function AdminOrdersPage() {
                         {item.quantity} × {item.item_name}
                       </strong>
 
-                      {item.size_name && (
-                        <span>
-                          {' '}
-                          — {item.size_name}
-                        </span>
-                      )}
+                      {item.size_name && <span> — {item.size_name}</span>}
 
-                      {item.crust_name && (
-                        <span>
-                          , {item.crust_name}
-                        </span>
-                      )}
+                      {item.crust_name && <span>, {item.crust_name}</span>}
 
                       {Array.isArray(item.toppings) &&
                         item.toppings.length > 0 && (
                           <div>
-                            Toppings:{' '}
+                            Toppings:{" "}
                             {item.toppings
-                              .map(
-                                (topping) =>
-                                  topping.name ??
-                                  topping,
-                              )
-                              .join(', ')}
+                              .map((topping) => topping.name ?? topping)
+                              .join(", ")}
                           </div>
                         )}
                     </li>
@@ -325,8 +237,7 @@ function AdminOrdersPage() {
 
                 {order.promotion_code && (
                   <p>
-                    <strong>Promotion:</strong>{' '}
-                    {order.promotion_code}
+                    <strong>Promotion:</strong> {order.promotion_code}
                   </p>
                 )}
 
@@ -338,8 +249,8 @@ function AdminOrdersPage() {
                 )}
 
                 <p>
-                  <strong>Total:</strong>{' '}
-                  ${(order.total_cents / 100).toFixed(2)}
+                  <strong>Total:</strong> $
+                  {(order.total_cents / 100).toFixed(2)}
                 </p>
               </section>
             </article>
@@ -347,7 +258,7 @@ function AdminOrdersPage() {
         </div>
       )}
     </section>
-  )
+  );
 }
 
-export default AdminOrdersPage
+export default AdminOrdersPage;

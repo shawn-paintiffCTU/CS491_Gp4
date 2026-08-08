@@ -1,7 +1,7 @@
 // Displays short cart feedback near the button that the customer clicked.
 function FloatingNotification({ notification }) {
   if (!notification) {
-    return null
+    return null;
   }
 
   return (
@@ -16,7 +16,7 @@ function FloatingNotification({ notification }) {
     >
       ✓ {notification.message}
     </div>
-  )
+  );
 }
 
-export default FloatingNotification
+export default FloatingNotification;

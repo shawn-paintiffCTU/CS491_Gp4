@@ -1,15 +1,15 @@
 // Landing page: loads restaurant details, promotions, and the photo gallery.
-import { useEffect, useState } from 'react'
-import { getRestaurantInformation } from '../services/restaurantService'
-import { Link } from 'react-router-dom'
-import { getActivePromotions } from '../services/promotionService.js'
-import { formatCurrency } from '../utils/pricing'
-import PhotoGallery from '../components/PhotoGallery'
+import { useEffect, useState } from "react";
+import { getRestaurantInformation } from "../services/restaurantService";
+import { Link } from "react-router-dom";
+import { getActivePromotions } from "../services/promotionService.js";
+import { formatCurrency } from "../utils/pricing";
+import PhotoGallery from "../components/PhotoGallery";
 
 function HomePage() {
-  const [restaurant, setRestaurant] = useState(null)
-  const [error, setError] = useState('')
-  const [promotions, setPromotions] = useState([])
+  const [restaurant, setRestaurant] = useState(null);
+  const [error, setError] = useState("");
+  const [promotions, setPromotions] = useState([]);
 
   useEffect(() => {
     async function loadRestaurant() {
@@ -17,24 +17,24 @@ function HomePage() {
         const [information, activePromotions] = await Promise.all([
           getRestaurantInformation(),
           getActivePromotions(),
-        ])
+        ]);
 
-        setRestaurant(information)
-        setPromotions(activePromotions)
+        setRestaurant(information);
+        setPromotions(activePromotions);
       } catch {
-        setError('Restaurant information could not be loaded.')
+        setError("The home page information could not be loaded.");
       }
     }
 
-    loadRestaurant()
-  }, [])
+    loadRestaurant();
+  }, []);
 
   if (error) {
-    return <p role="alert">{error}</p>
+    return <p role="alert">{error}</p>;
   }
 
   if (!restaurant) {
-    return <p>Loading restaurant information...</p>
+    return <p>Loading restaurant information...</p>;
   }
 
   return (
@@ -57,7 +57,7 @@ function HomePage() {
                 <h3>{promotion.code}</h3>
                 <p>{promotion.description}</p>
                 <p>
-                  Minimum order:{' '}
+                  Minimum order:{" "}
                   {formatCurrency(promotion.minimumSubtotalCents)}
                 </p>
               </article>
@@ -76,7 +76,7 @@ function HomePage() {
         <address>
           {restaurant.address.street}
           <br />
-          {restaurant.address.city}, {restaurant.address.state}{' '}
+          {restaurant.address.city}, {restaurant.address.state}{" "}
           {restaurant.address.zipCode}
         </address>
 
@@ -101,7 +101,7 @@ function HomePage() {
         </ul>
       </section>
     </>
-  )
+  );
 }
 
-export default HomePage
+export default HomePage;

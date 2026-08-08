@@ -1,92 +1,11 @@
--- Plethora of PIES!
--- Proposed PostgreSQL database schema. It is not connected to the current app.
-
--- Top-level groups such as Pizzas, Sides, and Drinks.
-CREATE TABLE categories (
-    category_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    description TEXT,
-    display_order INTEGER NOT NULL DEFAULT 0,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
-);
-
--- Products customers see on the menu.
-CREATE TABLE menu_items (
-    menu_item_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    category_id INTEGER NOT NULL,
-    name VARCHAR(150) NOT NULL,
-    description TEXT,
-    base_price_cents INTEGER NOT NULL CHECK (base_price_cents >= 0),
-    image_path VARCHAR(255),
-    is_customizable BOOLEAN NOT NULL DEFAULT FALSE,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-
-    CONSTRAINT fk_menu_item_category
-        FOREIGN KEY (category_id)
-        REFERENCES categories(category_id)
-        ON DELETE RESTRICT
-);
-
--- Price adjustments available in the pizza customizer.
-CREATE TABLE pizza_sizes (
-    size_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(50) NOT NULL UNIQUE,
-    price_adjustment_cents INTEGER NOT NULL DEFAULT 0,
-    display_order INTEGER NOT NULL DEFAULT 0,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
-);
-
-CREATE TABLE crusts (
-    crust_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    price_adjustment_cents INTEGER NOT NULL DEFAULT 0,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
-);
-
--- Individual ingredients customers can add to a pizza.
-CREATE TABLE toppings (
-    topping_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    price_cents INTEGER NOT NULL CHECK (price_cents >= 0),
-    category VARCHAR(50) NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
-);
-
--- Many-to-many link between menu pizzas and their included toppings.
-CREATE TABLE menu_item_toppings (
-    menu_item_id INTEGER NOT NULL,
-    topping_id INTEGER NOT NULL,
-    is_included BOOLEAN NOT NULL DEFAULT FALSE,
-
-    PRIMARY KEY (menu_item_id, topping_id),
-
-    CONSTRAINT fk_item_topping_menu_item
-        FOREIGN KEY (menu_item_id)
-        REFERENCES menu_items(menu_item_id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_item_topping_topping
-        FOREIGN KEY (topping_id)
-        REFERENCES toppings(topping_id)
-        ON DELETE RESTRICT
-);
-
--- Indexes make common category and active-item lookups faster.
-CREATE INDEX idx_menu_items_category
-    ON menu_items(category_id);
-
-CREATE INDEX idx_menu_items_active
-    ON menu_items(is_active);
-
-CREATE INDEX idx_toppings_active
-    ON toppings(is_active);
-
+-- Plethora of PIES! Supabase schema
+-- Run this complete script in the Supabase SQL Editor.
+-- It is idempotent and preserves existing rows.
 
 -- ============================================================
--- Sprint 2: User profiles and role-based access control
+-- Accounts and role-based access
 -- ============================================================
 
--- Roles recognized by the application.
 do $$
 begin
   create type public.app_role
@@ -96,43 +15,27 @@ exception
 end
 $$;
 
--- Customer information that may safely be accessed by the application.
 create table if not exists public.profiles (
   id uuid primary key
     references auth.users(id)
     on delete cascade,
-
   full_name text
     check (char_length(full_name) <= 100),
-
   phone text
     check (char_length(phone) <= 30),
-
-  created_at timestamptz
-    not null default now(),
-
-  updated_at timestamptz
-    not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
--- Roles are kept separate so customers cannot promote themselves
--- while editing ordinary profile information.
 create table if not exists public.user_roles (
   user_id uuid primary key
     references auth.users(id)
     on delete cascade,
-
-  role public.app_role
-    not null default 'customer',
-
-  created_at timestamptz
-    not null default now(),
-
-  updated_at timestamptz
-    not null default now()
+  role public.app_role not null default 'customer',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
--- Automatically update the modification timestamp.
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
@@ -144,24 +47,6 @@ begin
 end;
 $$;
 
-drop trigger if exists profiles_set_updated_at
-  on public.profiles;
-
-create trigger profiles_set_updated_at
-before update on public.profiles
-for each row
-execute function public.set_updated_at();
-
-drop trigger if exists user_roles_set_updated_at
-  on public.user_roles;
-
-create trigger user_roles_set_updated_at
-before update on public.user_roles
-for each row
-execute function public.set_updated_at();
-
--- Automatically give every new authenticated user a profile and
--- the customer role. Website registration can never choose admin.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -169,60 +54,39 @@ security definer
 set search_path = ''
 as $$
 begin
-  insert into public.profiles (
-    id,
-    full_name
-  )
+  insert into public.profiles (id, full_name)
   values (
     new.id,
     nullif(new.raw_user_meta_data ->> 'full_name', '')
   )
   on conflict (id) do nothing;
 
-  insert into public.user_roles (
-    user_id,
-    role
-  )
-  values (
-    new.id,
-    'customer'
-  )
+  insert into public.user_roles (user_id, role)
+  values (new.id, 'customer')
   on conflict (user_id) do nothing;
 
   return new;
 end;
 $$;
 
-drop trigger if exists on_auth_user_created
-  on auth.users;
-
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
 for each row
 execute function public.handle_new_user();
 
--- Create records for accounts that existed before this trigger.
-insert into public.profiles (
-  id,
-  full_name
-)
+insert into public.profiles (id, full_name)
 select
   id,
   nullif(raw_user_meta_data ->> 'full_name', '')
 from auth.users
 on conflict (id) do nothing;
 
-insert into public.user_roles (
-  user_id,
-  role
-)
-select
-  id,
-  'customer'
+insert into public.user_roles (user_id, role)
+select id, 'customer'
 from auth.users
 on conflict (user_id) do nothing;
 
--- Helper used by secure database policies.
 create or replace function public.is_admin()
 returns boolean
 language sql
@@ -238,79 +102,519 @@ as $$
   );
 $$;
 
-revoke all
-  on function public.is_admin()
-  from public;
+-- ============================================================
+-- Saved payment metadata
+-- Full card numbers and security codes are intentionally absent.
+-- ============================================================
 
-grant execute
-  on function public.is_admin()
+create table if not exists public.saved_payment_methods (
+  id bigint generated by default as identity primary key,
+  user_id uuid not null unique
+    references auth.users(id)
+    on delete cascade,
+  cardholder_name text not null
+    check (char_length(cardholder_name) between 2 and 100),
+  card_brand text not null
+    check (char_length(card_brand) between 2 and 30),
+  last_four text not null
+    check (last_four ~ '^\d{4}$'),
+  expiration_month smallint not null
+    check (expiration_month between 1 and 12),
+  expiration_year smallint not null
+    check (expiration_year between 2020 and 2100),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- ============================================================
+-- Menu availability and database-backed promotions
+-- ============================================================
+
+create table if not exists public.menu_item_availability (
+  menu_item_id integer primary key,
+  is_available boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+
+insert into public.menu_item_availability (
+  menu_item_id,
+  is_available
+)
+select menu_item_id, true
+from generate_series(1, 7) as menu_item_id
+on conflict (menu_item_id) do nothing;
+
+create table if not exists public.promotions (
+  id bigint generated by default as identity primary key,
+  code text not null unique
+    check (code = upper(code))
+    check (code ~ '^[A-Z0-9_-]{3,30}$'),
+  description text not null
+    check (char_length(description) between 5 and 200),
+  discount_type text not null
+    check (discount_type in ('percentage', 'fixed')),
+  discount_value integer not null
+    check (discount_value > 0),
+  minimum_subtotal_cents integer not null default 0
+    check (minimum_subtotal_cents >= 0),
+  is_active boolean not null default true,
+  display_order integer not null default 0
+    check (display_order >= 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (
+    discount_type <> 'percentage'
+    or discount_value <= 100
+  )
+);
+
+insert into public.promotions (
+  code,
+  description,
+  discount_type,
+  discount_value,
+  minimum_subtotal_cents,
+  is_active,
+  display_order
+)
+values
+  (
+    'PIZZA10',
+    '10% off orders of $15.00 or more',
+    'percentage',
+    10,
+    1500,
+    true,
+    10
+  ),
+  (
+    'FAMILY5',
+    '$5.00 off orders of $30.00 or more',
+    'fixed',
+    500,
+    3000,
+    true,
+    20
+  )
+on conflict (code) do nothing;
+
+-- ============================================================
+-- Pickup orders
+-- ============================================================
+
+create table if not exists public.orders (
+  id bigint generated by default as identity primary key,
+  user_id uuid
+    references auth.users(id)
+    on delete set null,
+  status text not null default 'placed'
+    check (
+      status in (
+        'placed',
+        'preparing',
+        'ready',
+        'completed',
+        'cancelled'
+      )
+    ),
+  item_count integer not null check (item_count > 0),
+  subtotal_cents integer not null check (subtotal_cents >= 0),
+  discount_cents integer not null default 0
+    check (discount_cents >= 0),
+  tax_cents integer not null check (tax_cents >= 0),
+  total_cents integer not null check (total_cents >= 0),
+  promotion_code text,
+  fulfillment_method text not null default 'pickup',
+  customer_name text not null
+    check (char_length(customer_name) between 2 and 100),
+  customer_phone text not null
+    check (char_length(customer_phone) between 7 and 20),
+  payment_brand text not null default 'Card',
+  payment_last_four text not null default '0000',
+  created_at timestamptz not null default now()
+);
+
+alter table public.orders
+  alter column user_id drop not null;
+
+alter table public.orders
+  add column if not exists payment_brand text
+    not null default 'Card';
+
+alter table public.orders
+  add column if not exists payment_last_four text
+    not null default '0000';
+
+create table if not exists public.order_items (
+  id bigint generated by default as identity primary key,
+  order_id bigint not null
+    references public.orders(id)
+    on delete cascade,
+  menu_item_id text not null,
+  item_name text not null,
+  quantity integer not null check (quantity > 0),
+  unit_price_cents integer not null
+    check (unit_price_cents >= 0),
+  size_name text,
+  crust_name text,
+  toppings jsonb not null default '[]'::jsonb
+);
+
+create index if not exists orders_user_id_index
+  on public.orders(user_id);
+
+create index if not exists orders_created_at_index
+  on public.orders(created_at desc);
+
+create index if not exists order_items_order_id_index
+  on public.order_items(order_id);
+
+-- Guest and registered orders use one atomic function. The function
+-- derives user_id from the authenticated session and revalidates totals.
+create or replace function public.place_order(
+  order_data jsonb,
+  items_data jsonb
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  new_order_id public.orders.id%type;
+  item jsonb;
+  calculated_item_count integer;
+  calculated_subtotal integer;
+  submitted_subtotal integer;
+  submitted_discount integer;
+  submitted_tax integer;
+  submitted_total integer;
+  expected_discount integer := 0;
+  expected_tax integer;
+  selected_promotion public.promotions%rowtype;
+begin
+  if jsonb_typeof(items_data) <> 'array'
+    or jsonb_array_length(items_data) < 1
+    or jsonb_array_length(items_data) > 50 then
+    raise exception 'An order must contain between 1 and 50 items.';
+  end if;
+
+  select
+    coalesce(sum((entry ->> 'quantity')::integer), 0),
+    coalesce(sum(
+      (entry ->> 'quantity')::integer
+      * (entry ->> 'unit_price_cents')::integer
+    ), 0)
+  into calculated_item_count, calculated_subtotal
+  from jsonb_array_elements(items_data) as entry;
+
+  submitted_subtotal := (order_data ->> 'subtotal_cents')::integer;
+  submitted_discount := (order_data ->> 'discount_cents')::integer;
+  submitted_tax := (order_data ->> 'tax_cents')::integer;
+  submitted_total := (order_data ->> 'total_cents')::integer;
+
+  if calculated_item_count <> (order_data ->> 'item_count')::integer
+    or calculated_subtotal <> submitted_subtotal then
+    raise exception 'Order item totals do not match.';
+  end if;
+
+  if nullif(order_data ->> 'promotion_code', '') is not null then
+    select *
+    into selected_promotion
+    from public.promotions
+    where code = upper(order_data ->> 'promotion_code')
+      and is_active = true;
+
+    if not found
+      or submitted_subtotal
+        < selected_promotion.minimum_subtotal_cents then
+      raise exception 'The promotion is not valid for this order.';
+    end if;
+
+    if selected_promotion.discount_type = 'percentage' then
+      expected_discount := round(
+        submitted_subtotal
+        * selected_promotion.discount_value
+        / 100.0
+      );
+    else
+      expected_discount := least(
+        selected_promotion.discount_value,
+        submitted_subtotal
+      );
+    end if;
+  end if;
+
+  if submitted_discount <> expected_discount then
+    raise exception 'The submitted discount is invalid.';
+  end if;
+
+  expected_tax := round(
+    greatest(submitted_subtotal - submitted_discount, 0)
+    * 0.08
+  );
+
+  if submitted_tax <> expected_tax
+    or submitted_total <>
+      submitted_subtotal - submitted_discount + submitted_tax then
+    raise exception 'The submitted order total is invalid.';
+  end if;
+
+  if char_length(trim(order_data ->> 'customer_name'))
+      not between 2 and 100
+    or char_length(trim(order_data ->> 'customer_phone'))
+      not between 7 and 20 then
+    raise exception 'Customer contact information is invalid.';
+  end if;
+
+  if coalesce(order_data ->> 'payment_last_four', '') !~ '^\d{4}$' then
+    raise exception 'Payment metadata is invalid.';
+  end if;
+
+  insert into public.orders (
+    user_id,
+    item_count,
+    subtotal_cents,
+    discount_cents,
+    tax_cents,
+    total_cents,
+    promotion_code,
+    fulfillment_method,
+    customer_name,
+    customer_phone,
+    payment_brand,
+    payment_last_four
+  )
+  values (
+    (select auth.uid()),
+    calculated_item_count,
+    submitted_subtotal,
+    submitted_discount,
+    submitted_tax,
+    submitted_total,
+    nullif(upper(order_data ->> 'promotion_code'), ''),
+    'pickup',
+    trim(order_data ->> 'customer_name'),
+    trim(order_data ->> 'customer_phone'),
+    left(trim(order_data ->> 'payment_brand'), 30),
+    order_data ->> 'payment_last_four'
+  )
+  returning id into new_order_id;
+
+  for item in select * from jsonb_array_elements(items_data)
+  loop
+    if (item ->> 'quantity')::integer < 1
+      or (item ->> 'unit_price_cents')::integer < 0
+      or char_length(trim(item ->> 'item_name')) < 1 then
+      raise exception 'An order item is invalid.';
+    end if;
+
+    insert into public.order_items (
+      order_id,
+      menu_item_id,
+      item_name,
+      quantity,
+      unit_price_cents,
+      size_name,
+      crust_name,
+      toppings
+    )
+    values (
+      new_order_id,
+      item ->> 'menu_item_id',
+      trim(item ->> 'item_name'),
+      (item ->> 'quantity')::integer,
+      (item ->> 'unit_price_cents')::integer,
+      nullif(item ->> 'size_name', ''),
+      nullif(item ->> 'crust_name', ''),
+      coalesce(item -> 'toppings', '[]'::jsonb)
+    );
+  end loop;
+
+  return new_order_id::text;
+end;
+$$;
+
+-- ============================================================
+-- Updated-at triggers
+-- ============================================================
+
+drop trigger if exists profiles_set_updated_at on public.profiles;
+create trigger profiles_set_updated_at
+before update on public.profiles
+for each row execute function public.set_updated_at();
+
+drop trigger if exists user_roles_set_updated_at
+  on public.user_roles;
+create trigger user_roles_set_updated_at
+before update on public.user_roles
+for each row execute function public.set_updated_at();
+
+drop trigger if exists saved_payment_methods_set_updated_at
+  on public.saved_payment_methods;
+create trigger saved_payment_methods_set_updated_at
+before update on public.saved_payment_methods
+for each row execute function public.set_updated_at();
+
+drop trigger if exists menu_item_availability_set_updated_at
+  on public.menu_item_availability;
+create trigger menu_item_availability_set_updated_at
+before update on public.menu_item_availability
+for each row execute function public.set_updated_at();
+
+drop trigger if exists promotions_set_updated_at
+  on public.promotions;
+create trigger promotions_set_updated_at
+before update on public.promotions
+for each row execute function public.set_updated_at();
+
+-- ============================================================
+-- Permissions and row-level security
+-- ============================================================
+
+revoke all on public.profiles from anon, authenticated;
+revoke all on public.user_roles from anon, authenticated;
+revoke all on public.saved_payment_methods from anon, authenticated;
+revoke all on public.menu_item_availability from anon, authenticated;
+revoke all on public.promotions from anon, authenticated;
+revoke all on public.orders from anon, authenticated;
+revoke all on public.order_items from anon, authenticated;
+
+grant select, update on public.profiles to authenticated;
+grant select on public.user_roles to authenticated;
+grant select, insert, update, delete
+  on public.saved_payment_methods to authenticated;
+grant select on public.menu_item_availability to anon, authenticated;
+grant update on public.menu_item_availability to authenticated;
+grant select on public.promotions to anon, authenticated;
+grant insert, update, delete on public.promotions to authenticated;
+grant select, update on public.orders to authenticated;
+grant select on public.order_items to authenticated;
+grant usage on type public.app_role to authenticated;
+grant usage, select on sequence public.saved_payment_methods_id_seq
+  to authenticated;
+grant usage, select on sequence public.promotions_id_seq
   to authenticated;
 
--- Remove general access before granting only what is required.
-revoke all on public.profiles from anon;
-revoke all on public.user_roles from anon;
+revoke all on function public.is_admin() from public;
+grant execute on function public.is_admin() to authenticated;
 
-revoke all on public.profiles from authenticated;
-revoke all on public.user_roles from authenticated;
+revoke all on function public.place_order(jsonb, jsonb) from public;
+grant execute on function public.place_order(jsonb, jsonb)
+  to anon, authenticated;
 
-grant select, update
-  on public.profiles
-  to authenticated;
-
-grant select
-  on public.user_roles
-  to authenticated;
-
-grant usage
-  on type public.app_role
-  to authenticated;
-
--- Row Level Security remains the final access-control layer.
 alter table public.profiles enable row level security;
 alter table public.user_roles enable row level security;
+alter table public.saved_payment_methods enable row level security;
+alter table public.menu_item_availability enable row level security;
+alter table public.promotions enable row level security;
+alter table public.orders enable row level security;
+alter table public.order_items enable row level security;
 
 drop policy if exists "Users can view their own profile"
   on public.profiles;
-
 create policy "Users can view their own profile"
-on public.profiles
-for select
-to authenticated
+on public.profiles for select to authenticated
 using ((select auth.uid()) = id);
 
 drop policy if exists "Users can update their own profile"
   on public.profiles;
-
 create policy "Users can update their own profile"
-on public.profiles
-for update
-to authenticated
+on public.profiles for update to authenticated
 using ((select auth.uid()) = id)
 with check ((select auth.uid()) = id);
 
 drop policy if exists "Admins can view all profiles"
   on public.profiles;
-
 create policy "Admins can view all profiles"
-on public.profiles
-for select
-to authenticated
+on public.profiles for select to authenticated
 using ((select public.is_admin()));
 
 drop policy if exists "Users can view their own role"
   on public.user_roles;
-
 create policy "Users can view their own role"
-on public.user_roles
-for select
-to authenticated
+on public.user_roles for select to authenticated
 using ((select auth.uid()) = user_id);
 
 drop policy if exists "Admins can view all roles"
   on public.user_roles;
-
 create policy "Admins can view all roles"
-on public.user_roles
-for select
-to authenticated
+on public.user_roles for select to authenticated
+using ((select public.is_admin()));
+
+drop policy if exists "Users manage their own payment method"
+  on public.saved_payment_methods;
+create policy "Users manage their own payment method"
+on public.saved_payment_methods for all to authenticated
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+drop policy if exists "Anyone can view menu availability"
+  on public.menu_item_availability;
+create policy "Anyone can view menu availability"
+on public.menu_item_availability for select to anon, authenticated
+using (true);
+
+drop policy if exists "Admins manage menu availability"
+  on public.menu_item_availability;
+create policy "Admins manage menu availability"
+on public.menu_item_availability for update to authenticated
+using ((select public.is_admin()))
+with check ((select public.is_admin()));
+
+drop policy if exists "Anyone can view active promotions"
+  on public.promotions;
+create policy "Anyone can view active promotions"
+on public.promotions for select to anon, authenticated
+using (is_active);
+
+drop policy if exists "Admins can view all promotions"
+  on public.promotions;
+create policy "Admins can view all promotions"
+on public.promotions for select to authenticated
+using ((select public.is_admin()));
+
+drop policy if exists "Admins manage promotions"
+  on public.promotions;
+create policy "Admins manage promotions"
+on public.promotions for all to authenticated
+using ((select public.is_admin()))
+with check ((select public.is_admin()));
+
+drop policy if exists "Users view their own orders"
+  on public.orders;
+create policy "Users view their own orders"
+on public.orders for select to authenticated
+using ((select auth.uid()) = user_id);
+
+drop policy if exists "Admins view all orders"
+  on public.orders;
+create policy "Admins view all orders"
+on public.orders for select to authenticated
+using ((select public.is_admin()));
+
+drop policy if exists "Admins update order status"
+  on public.orders;
+create policy "Admins update order status"
+on public.orders for update to authenticated
+using ((select public.is_admin()))
+with check ((select public.is_admin()));
+
+drop policy if exists "Users view their own order items"
+  on public.order_items;
+create policy "Users view their own order items"
+on public.order_items for select to authenticated
+using (
+  exists (
+    select 1
+    from public.orders
+    where orders.id = order_items.order_id
+      and orders.user_id = (select auth.uid())
+  )
+);
+
+drop policy if exists "Admins view all order items"
+  on public.order_items;
+create policy "Admins view all order items"
+on public.order_items for select to authenticated
 using ((select public.is_admin()));

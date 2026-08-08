@@ -11,7 +11,7 @@
   --success: #176b32;
   --danger: #ff8a8a;
   --shadow: 0 8px 24px rgb(0 0 0 / 35%);
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   color: var(--text);
@@ -96,6 +96,6 @@ p {
   margin-block: 0.5rem;
 }
 
-[role='alert'] {
+[role="alert"] {
   color: var(--danger);
 }
