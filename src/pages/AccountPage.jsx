@@ -128,7 +128,7 @@ function AccountPage() {
 
       {errorMessage && <p role="alert">{errorMessage}</p>}
 
-      <section>
+      <section className="account-section">
         <h3>Profile Information</h3>
 
         <form
