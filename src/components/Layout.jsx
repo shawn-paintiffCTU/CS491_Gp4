@@ -70,7 +70,7 @@ function Layout() {
       </main>
 
       <footer>
-        <p>2026 Plethora of PIES!: CTU CS491 Group4 Demonstration</p>
+        <p>2026 Plethora of PIES!: CTU CS492 Group4 Demonstration</p>
       </footer>
     </>
   );
