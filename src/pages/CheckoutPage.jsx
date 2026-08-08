@@ -11,6 +11,10 @@ import {
   calculateOrderTotals,
   formatCurrency,
 } from '../utils/pricing'
+import {
+  NAME_MAX_LENGTH,
+  PHONE_MAX_LENGTH,
+} from '../utils/contactValidation'
 
 function CheckoutPage() {
   const {
@@ -21,8 +25,6 @@ function CheckoutPage() {
     discountCents,
     clearCart,
   } = useCart()
-
-  const { user } = useAuth()
 
   const [customerName, setCustomerName] = useState('')
   const [phone, setPhone] = useState('')
@@ -39,6 +41,7 @@ function CheckoutPage() {
   const [cardNumber, setCardNumber] = useState('')
   const [expirationDate, setExpirationDate] = useState('')
   const [cvv, setCvv] = useState('')
+  const { user, profile } = useAuth()
 
   const [errors, setErrors] = useState({})
   const [completedOrder, setCompletedOrder] = useState(null)
@@ -111,26 +114,26 @@ function CheckoutPage() {
       validationErrors.cvv =
         'Enter a 3 or 4 digit demo CVV.'
     }
-
+    
     setErrors(validationErrors)
 
     return Object.keys(validationErrors).length === 0
-  }
+    }
 
   async function handleSubmit(event) {
     event.preventDefault()
     setOrderError('')
-
+    
     if (!validateForm()) {
-      return
-    }
+    return
+  }
 
-    if (!user) {
-      setOrderError(
-        'Please log in before placing an order.',
-      )
-      return
-    }
+  if (!user) {
+    setOrderError(
+      'Please log in before placing an order.',
+    )
+    return
+  }
 
     setSubmitting(true)
 
@@ -266,44 +269,44 @@ function CheckoutPage() {
         payment information.
       </p>
 
-      <form onSubmit={handleSubmit} noValidate>
-        <fieldset>
-          <legend>Fulfillment Method</legend>
+<form
+  key={
+    profile?.updated_at ??
+    user?.id ??
+    'guest-checkout'
+  }
+  onSubmit={handleSubmit}
+  noValidate
+>
+  <fieldset>
+    <legend>Fulfillment Method</legend>
 
-          <label>
-            <input
-              type="radio"
-              name="fulfillment-method"
-              value="pickup"
-              checked={
-                fulfillmentMethod === 'pickup'
-              }
-              onChange={(event) =>
-                setFulfillmentMethod(
-                  event.target.value,
-                )
-              }
-            />
-            In-Store Pickup
-          </label>
+    <label>
+      <input
+        type="radio"
+        name="fulfillment-method"
+        value="pickup"
+        checked={fulfillmentMethod === 'pickup'}
+        onChange={(event) =>
+          setFulfillmentMethod(event.target.value)
+        }
+      />
+      In-Store Pickup
+    </label>
 
-          <label>
-            <input
-              type="radio"
-              name="fulfillment-method"
-              value="delivery"
-              checked={
-                fulfillmentMethod === 'delivery'
-              }
-              onChange={(event) =>
-                setFulfillmentMethod(
-                  event.target.value,
-                )
-              }
-            />
-            Delivery
-          </label>
-        </fieldset>
+    <label>
+      <input
+        type="radio"
+        name="fulfillment-method"
+        value="delivery"
+        checked={fulfillmentMethod === 'delivery'}
+        onChange={(event) =>
+          setFulfillmentMethod(event.target.value)
+        }
+      />
+      Delivery
+    </label>
+  </fieldset>
 
         <fieldset>
           <legend>Contact Information</legend>
@@ -314,9 +317,11 @@ function CheckoutPage() {
 
           <input
             id="customer-name"
+            name="fullName"
             type="text"
-            value={customerName}
-            maxLength="100"
+            defaultValue={profile?.full_name ?? ''}
+            maxLength={NAME_MAX_LENGTH}
+            autoComplete="name"
             aria-describedby={
               errors.customerName
                 ? 'customer-name-error'
@@ -347,9 +352,11 @@ function CheckoutPage() {
 
           <input
             id="phone"
+            name="phone"
             type="tel"
             value={phone}
-            maxLength="20"
+            maxLength={PHONE_MAX_LENGTH}
+            autoComplete="tel"
             aria-describedby={
               errors.phone
                 ? 'phone-error'

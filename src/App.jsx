@@ -17,6 +17,8 @@ import RegisterPage from './pages/RegisterPage'
 import AccountPage from './pages/AccountPage'
 import AdminOrdersPage from './pages/AdminOrdersPage'
 import AdminMenuPage from './pages/AdminMenuPage'
+import AdminPage from './pages/AdminPage'
+import ProfilePage from './pages/ProfilePage'
 
 import './App.css'
 
@@ -34,6 +36,8 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/menu" element={<MenuPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
 
           <Route
             path="/menu/:itemId/customize"

@@ -13,7 +13,7 @@ import { getUserProfile } from '../services/profileService'
 
 function Layout() {
   const { itemCount } = useCart()
-  const { user, logout } = useAuth()
+  const { user, isManager, logout } = useAuth()
   const [role, setRole] = useState(null)
   const navigate = useNavigate()
 
@@ -82,6 +82,10 @@ function Layout() {
           <Link to="/checkout">
             Checkout
           </Link>
+
+          <Link to="/profile">Profile</Link>
+
+          {isManager && <Link to="/admin">Admin</Link>}
 
           {user ? (
             <>
